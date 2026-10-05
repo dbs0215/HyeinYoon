@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dual-Chirp Radar Block Diagram</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one wide schematic sheet (scrolls sideways on phones) over a grid of stage cards that the schematic selects. */
+:root {
+  --bg: #f3f4f1;
+  --sheet: #fbfbf9;
+  --ink: #1d2430;
+  --muted: #5d6776;
+  --rule: #c9cec9;
+  --grid: #e3e6e1;
+  --lane1: #2856b8;
+  --lane1-soft: #e3eaf8;
+  --lane2: #b8641a;
+  --lane2-soft: #f6eadc;
+  --shared: #2f6f5e;
+  --shared-soft: #e0eee9;
+  --block: #ffffff;
+  --focus: #1d2430;
+  --hover: rgba(40, 86, 184, 0.06);
+  --shadow: rgba(29, 36, 48, 0.18);
+  --font-ui: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181d; --sheet: #1a1f26; --ink: #e5e8ec; --muted: #9aa3ae; --rule: #39414b; --grid: #232a32;
+    --lane1: #7fa2ec; --lane1-soft: #1f2c45; --lane2: #e3a062; --lane2-soft: #3a2a1b;
+    --shared: #6fc0a6; --shared-soft: #1b3330; --block: #20262e; --focus: #e5e8ec; --hover: rgba(127, 162, 236, 0.08); --shadow: rgba(0, 0, 0, 0.5); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14181d; --sheet: #1a1f26; --ink: #e5e8ec; --muted: #9aa3ae; --rule: #39414b; --grid: #232a32;
+  --lane1: #7fa2ec; --lane1-soft: #1f2c45; --lane2: #e3a062; --lane2-soft: #3a2a1b;
+  --shared: #6fc0a6; --shared-soft: #1b3330; --block: #20262e; --focus: #e5e8ec; --hover: rgba(127, 162, 236, 0.08); --shadow: rgba(0, 0, 0, 0.5); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 48px; display: grid; gap: 22px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 0; font-size: clamp(22px, 3.2vw, 32px); font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.lede { margin: 0; max-width: 72ch; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 22px; height: 0; border-top: 3px solid; }
+.sw.l1 { border-color: var(--lane1); } .sw.l2 { border-color: var(--lane2); } .sw.sh { border-color: var(--shared); }
+.sw.ctl { border-top: 2px dashed var(--muted); }
+.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+.sheet svg { display: block; width: 100%; min-width: 980px; height: auto; }
+svg text { font-family: var(--font-ui); fill: var(--ink); }
+svg .mono { font-family: var(--font-mono); font-size: 10.5px; fill: var(--muted); }
+svg .ttl { font-size: 13px; font-weight: 600; }
+svg .grp { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; fill: var(--muted); }
+svg .frame { fill: none; stroke: var(--rule); stroke-width: 1; stroke-dasharray: 4 4; }
+svg .blk rect { fill: var(--block); stroke: var(--ink); stroke-width: 1.2; }
+svg .blk.l1 rect { stroke: var(--lane1); fill: var(--lane1-soft); }
+svg .blk.l2 rect { stroke: var(--lane2); fill: var(--lane2-soft); }
+svg .blk.sh rect { stroke: var(--shared); fill: var(--shared-soft); }
+svg .blk { cursor: pointer; }
+svg .blk:hover rect, svg .blk:focus rect { stroke-width: 2.4; }
+svg .blk.on rect { stroke-width: 3; }
+svg .blk:focus { outline: none; }
+svg .w { stroke: var(--ink); stroke-width: 1.4; fill: none; }
+svg .w.l1 { stroke: var(--lane1); stroke-width: 1.8; } svg .w.l2 { stroke: var(--lane2); stroke-width: 1.8; }
+svg .w.sh { stroke: var(--shared); stroke-width: 1.8; }
+svg .w.ctl { stroke: var(--muted); stroke-dasharray: 5 4; stroke-width: 1.2; }
+svg .ah { fill: var(--ink); } svg .ah.l1 { fill: var(--lane1); } svg .ah.l2 { fill: var(--lane2); } svg .ah.sh { fill: var(--shared); } svg .ah.ctl { fill: var(--muted); }
+svg .t1 { fill: var(--lane1); } svg .t2 { fill: var(--lane2); } svg .idle { fill: var(--grid); stroke: var(--rule); }
+svg .ant { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+svg .target rect { fill: none; stroke: var(--muted); stroke-dasharray: 3 3; }
+.cards { display: block; }
+.cards .card { max-width: 640px; position: relative; padding-right: 86px; }
+.cards .card .xbtn { position: absolute; top: 12px; right: 12px; }
+.card { background: var(--sheet); border: 1px solid var(--rule); border-left: 4px solid var(--ink); border-radius: 4px; padding: 14px 16px; display: grid; gap: 6px; align-content: start; min-width: 0; transition: box-shadow .15s; }
+.card.l1 { border-left-color: var(--lane1); } .card.l2 { border-left-color: var(--lane2); } .card.sh { border-left-color: var(--shared); }
+.card.on { box-shadow: 0 0 0 2px var(--focus); }
+.card h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.card p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.card dl { margin: 2px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+.card dt { color: var(--muted); } .card dd { margin: 0; overflow-wrap: anywhere; }
+.tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+footer { font-size: 12.5px; color: var(--muted); }
+/* section hit areas and info panel */
+svg > text, svg > polyline, svg > polygon, svg > line, svg > path, svg .frame, svg .target { pointer-events: none; }
+svg .hit { fill: transparent; cursor: pointer; transition: fill .15s; }
+svg .hit:hover, svg .hit.on { fill: var(--hover); }
+svg .sec-i { cursor: pointer; pointer-events: all; }
+svg .sec-i circle { fill: var(--sheet); stroke: var(--muted); stroke-width: 1.2; }
+svg .sec-i text { font-family: var(--font-mono); font-size: 10px; font-weight: 500; fill: var(--muted); pointer-events: none; }
+svg .sec-i:hover circle, svg .sec-i:focus circle { stroke: var(--ink); stroke-width: 2; }
+svg .sec-i:focus { outline: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chips .lbl { font-size: 13px; color: var(--muted); margin-right: 2px; }
+.chip { font: 500 13px var(--font-ui); color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.chip:hover { border-color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.chip:focus-visible, .xbtn:focus-visible, .rel button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.stage { position: relative; min-width: 0; }
+.info { background: var(--sheet); border: 1px solid var(--rule); border-top: 4px solid var(--sec, var(--ink)); border-radius: 6px; padding: 18px 20px 20px; display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px 32px; align-items: start; scroll-margin-top: 16px; }
+.info > header { grid-column: 1 / -1; }
+.info .col { display: grid; gap: 10px; min-width: 0; }
+.info header { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 4px 10px; }
+.info h2 { margin: 0; font-size: 18px; font-weight: 700; text-wrap: balance; grid-column: 1; }
+.info .tag { grid-column: 1; }
+.xbtn { grid-column: 2; grid-row: 1 / span 2; font: 500 13px var(--font-ui); color: var(--ink); background: transparent; border: 1px solid var(--rule); border-radius: 4px; padding: 3px 9px; cursor: pointer; }
+.xbtn:hover { border-color: var(--ink); }
+.info p { margin: 0; font-size: 14px; color: var(--ink); max-width: 62ch; }
+.info h4 { margin: 4px 0 0; font-size: 12px; font-family: var(--font-mono); font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.info ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; }
+.info dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 3px 14px; font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.info dt { color: var(--muted); } .info dd { margin: 0; overflow-wrap: anywhere; }
+.info .eq { font-family: var(--font-mono); font-size: 13px; background: var(--hover); border-radius: 4px; padding: 6px 10px; overflow-wrap: anywhere; }
+.rel { display: flex; flex-wrap: wrap; gap: 6px; }
+.rel button { font: 12px var(--font-mono); color: var(--ink); background: transparent; border: 1px dashed var(--muted); border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+.rel button:hover { border-style: solid; border-color: var(--ink); }
+@media (max-width: 720px) { .info { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .card, svg .hit { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">77 GHz FMCW · dual chirp-duration velocity disambiguation</div>
+    <h1>System block diagram</h1>
+    <p class="lede">Signal flow from the chirp sequencer to the tracker. The two chirp blocks share one RF front end and split into two independent range–Doppler lanes that meet only at candidate matching. Select a block to see its parameters below the diagram, or select a section (the shaded area behind the blocks, its ⓘ marker, or a Sections button) to open a fuller explanation under the diagram.</p>
+    <div class="legend" aria-label="Legend">
+      <span><i class="sw l1"></i>Lane 1 · T<sub>c1</sub> = 40 µs</span>
+      <span><i class="sw l2"></i>Lane 2 · T<sub>c2</sub> = 50 µs</span>
+      <span><i class="sw sh"></i>Combined estimate</span>
+      <span><i class="sw ctl"></i>Control / side information</span>
+    </div>
+  </header>
+
+  <div class="chips" id="chips" role="group" aria-label="Section explanations"><span class="lbl">Sections:</span></div>
+
+  <div class="stage">
+    <div class="sheet" aria-label="Block diagram of the dual chirp-duration radar: sequencer, synthesizer, PA, antennas, LNA, mixer, ADC, block demultiplexer, two DSP lanes and candidate matching.">
+      <svg id="dia" viewBox="0 0 1240 680" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+  </div>
+
+  <section class="info" id="info" hidden aria-labelledby="info-title" tabindex="-1"></section>
+
+  <section class="cards" id="cards" aria-label="Block details" hidden></section>
+
+  <footer>Parameters follow the paper: f<sub>0</sub> = 77 GHz, B = 300 MHz, N<sub>s</sub> = 256, N<sub>c</sub> = 128, V<sub>c</sub> = 71 m/s, 20 Hz frame. Equation numbers refer to the IEEE-format manuscript.</footer>
+</div>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var svg = document.getElementById('dia');
+  function el(name, attrs, parent, text) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    (parent || svg).appendChild(e);
+    return e;
+  }
+  // arrowhead helper: polyline points, cls = lane class
+  function wire(pts, cls, head) {
+    el('polyline', { points: pts.map(function (p) { return p.join(','); }).join(' '), class: 'w ' + (cls || '') });
+    if (head === false) return;
+    var a = pts[pts.length - 2], b = pts[pts.length - 1];
+    var ang = Math.atan2(b[1] - a[1], b[0] - a[0]), L = 9, W = 4.5;
+    var p1 = [b[0] - L * Math.cos(ang) + W * Math.sin(ang), b[1] - L * Math.sin(ang) - W * Math.cos(ang)];
+    var p2 = [b[0] - L * Math.cos(ang) - W * Math.sin(ang), b[1] - L * Math.sin(ang) + W * Math.cos(ang)];
+    el('polygon', { points: [b, p1, p2].map(function (p) { return p.join(','); }).join(' '), class: 'ah ' + (cls || '') });
+  }
+  var B = {};
+  function block(id, x, y, w, h, title, lines, cls) {
+    var g = el('g', { class: 'blk ' + (cls || ''), 'data-id': id, tabindex: 0, role: 'button', 'aria-label': title });
+    el('rect', { x: x, y: y, width: w, height: h, rx: 4 }, g);
+    var ty = y + 20 - (lines.length > 1 ? 4 : 0);
+    el('text', { x: x + w / 2, y: ty, 'text-anchor': 'middle', class: 'ttl' }, g, title);
+    lines.forEach(function (t, i) { el('text', { x: x + w / 2, y: ty + 16 + i * 13, 'text-anchor': 'middle', class: 'mono' }, g, t); });
+    B[id] = { x: x, y: y, w: w, h: h, cx: x + w / 2, cy: y + h / 2, r: x + w, b: y + h };
+    return g;
+  }
+
+  // background grid
+  for (var gx = 0; gx <= 1240; gx += 40) el('line', { x1: gx, y1: 0, x2: gx, y2: 680, stroke: 'var(--grid)', 'stroke-width': 0.6 });
+  for (var gy = 0; gy <= 680; gy += 40) el('line', { x1: 0, y1: gy, x2: 1240, y2: gy, stroke: 'var(--grid)', 'stroke-width': 0.6 });
+
+  // section hit areas (drawn under everything else)
+  var SECS = [
+    ['fe', 10, 28, 680, 230], ['scene', 700, 52, 530, 190], ['lanes', 10, 284, 928, 240],
+    ['comb', 938, 284, 292, 240], ['timing', 10, 546, 1220, 122]
+  ];
+  SECS.forEach(function (h) {
+    el('rect', { x: h[1], y: h[2], width: h[3], height: h[4], rx: 6, class: 'hit', 'data-sec': h[0] });
+  });
+
+  // group frames
+  el('rect', { x: 10, y: 28, width: 680, height: 230, class: 'frame', rx: 6 });
+  el('text', { x: 22, y: 46, class: 'grp' }, null, 'RADAR FRONT END · 77 GHz');
+  el('rect', { x: 10, y: 284, width: 1220, height: 240, class: 'frame', rx: 6 });
+  el('text', { x: 22, y: 302, class: 'grp' }, null, 'BASEBAND DSP · PER RECEIVE CHANNEL');
+  el('rect', { x: 10, y: 546, width: 1220, height: 122, class: 'frame', rx: 6 });
+  el('text', { x: 22, y: 564, class: 'grp' }, null, 'FRAME TIMING · 50 ms (20 Hz)');
+
+  el('text', { x: 712, y: 72, class: 'grp' }, null, 'SCENE · TARGET ECHO');
+  el('text', { x: 950, y: 302, class: 'grp' }, null, 'COMBINATION');
+  el('line', { x1: 938, y1: 290, x2: 938, y2: 518, stroke: 'var(--rule)', 'stroke-dasharray': '2 4' });
+  function infoMark(sec, x, y, name) {
+    var g = el('g', { class: 'sec-i', 'data-sec': sec, tabindex: 0, role: 'button', 'aria-label': 'Explain section: ' + name });
+    el('circle', { cx: x, cy: y, r: 8 }, g);
+    el('text', { x: x, y: y + 3.5, 'text-anchor': 'middle' }, g, 'i');
+  }
+  infoMark('fe', 212, 42, 'Radar front end');
+  infoMark('scene', 868, 68, 'Scene and propagation');
+  infoMark('lanes', 292, 298, 'Two range-Doppler lanes');
+  infoMark('comb', 1048, 298, 'Combination');
+  infoMark('timing', 246, 560, 'Frame timing');
+
+  // TX row
+  block('seq', 30, 62, 170, 60, 'Chirp sequencer', ['block 1: 128 × 40 µs', 'block 2: 128 × 50 µs']);
+  block('syn', 235, 62, 170, 60, 'Synthesizer', ['77 GHz ramp, B = 300 MHz', 'S = B / Tc']);
+  block('pa', 440, 62, 100, 60, 'PA', ['TX gain']);
+  // TX antenna
+  el('path', { d: 'M600 70 L630 70 L615 96 Z M615 96 L615 112', class: 'ant' });
+  el('text', { x: 615, y: 60, 'text-anchor': 'middle', class: 'mono' }, null, 'TX');
+  wire([[200, 92], [235, 92]]); wire([[405, 92], [440, 92]]); wire([[540, 92], [600, 92]]);
+
+  // RX row (flows right to left)
+  el('path', { d: 'M600 176 L630 176 L615 202 Z M615 202 L615 218 L560 218', class: 'ant' });
+  el('text', { x: 615, y: 168, 'text-anchor': 'middle', class: 'mono' }, null, 'RX');
+  block('lna', 440, 188, 100, 60, 'LNA', ['low-noise amp']);
+  block('mix', 265, 188, 110, 60, 'Mixer', ['de-chirp → beat']);
+  block('adc', 120, 188, 120, 60, 'IF filter + ADC', ['Ns = 256', 'fs = Ns / Tc']);
+  block('dmx', 20, 188, 82, 60, 'Demux', ['by block']);
+  wire([[560, 218], [540, 218]]);
+  wire([[440, 218], [375, 218]]);
+  wire([[265, 218], [240, 218]]);
+  wire([[120, 218], [102, 218]]);
+  // LO from synthesizer to mixer
+  wire([[320, 122], [320, 188]], 'ctl');
+  el('text', { x: 326, y: 160, class: 'mono' }, null, 'LO');
+  // block sync from sequencer to demux
+  wire([[60, 122], [60, 188]], 'ctl');
+  el('text', { x: 66, y: 150, class: 'mono' }, null, 'sync');
+
+  // Scene / target
+  var tg = el('g', { class: 'target' });
+  el('rect', { x: 960, y: 96, width: 240, height: 100, rx: 8 }, tg);
+  el('text', { x: 1080, y: 124, 'text-anchor': 'middle', class: 'ttl' }, tg, 'Target');
+  el('text', { x: 1080, y: 144, 'text-anchor': 'middle', class: 'mono' }, tg, 'R ∈ [10, 110] m');
+  el('text', { x: 1080, y: 160, 'text-anchor': 'middle', class: 'mono' }, tg, '|v| ≤ 70 m/s');
+  el('text', { x: 1080, y: 176, 'text-anchor': 'middle', class: 'mono' }, tg, 'vmax,1 = ±24.35 m/s');
+  wire([[640, 88], [960, 120]]);
+  el('text', { x: 790, y: 92, 'text-anchor': 'middle', class: 'mono' }, null, 'chirp blocks, λ = 3.896 mm');
+  wire([[960, 172], [640, 196]]);
+  el('text', { x: 800, y: 202, 'text-anchor': 'middle', class: 'mono' }, null, 'echo: τ = 2R/c, fD = 2v/λ');
+
+  // DSP lanes
+  var L1 = 330, L2 = 432, H = 64;
+  [[L1, 'l1', '1'], [L2, 'l2', '2']].forEach(function (o) {
+    var y = o[0], c = o[1], i = o[2];
+    block('win' + i, 140, y, 140, H, 'Hann + 2D-FFT', ['256 × 128 map ' + i, '+45.2 dB gain'], c);
+    block('pk' + i, 300, y, 140, H, 'Peak detection', ['CFAR, Ploc ≥ 0.99', '(n̂' + i + ', m̂' + i + ')'], c);
+    block('ip' + i, 460, y, 140, H, 'Interpolation', ['Grandke, Hann (4)', 'optional'], c);
+    block('fv' + i, 620, y, 140, H, 'Folded v̂' + i, ['eq. (2)', 'P' + i + ' = ' + (i === '1' ? '48.70' : '38.96') + ' m/s'], c);
+    block('cd' + i, 780, y, 140, H, 'Candidates 𝒞' + i, ['eq. (6), |v| ≤ 71', (i === '1' ? '2–3' : '3–4') + ' values'], c);
+    var cy = y + H / 2;
+    wire([[280, cy], [300, cy]], c); wire([[440, cy], [460, cy]], c); wire([[600, cy], [620, cy]], c); wire([[760, cy], [780, cy]], c);
+  });
+  // demux to lanes
+  wire([[50, 248], [50, L1 + H / 2], [140, L1 + H / 2]], 'l1');
+  wire([[86, 248], [86, L2 + H / 2], [140, L2 + H / 2]], 'l2');
+
+  // matching and outputs
+  block('mt', 945, 381, 128, H, 'Closest pair', ['eq. (7), ≤ 12 pairs', 'v̂ = ½(c₁*+c₂*)'], 'sh');
+  block('rc', 1090, 330, 130, H, 'Range correction', ['eq. (3)', 'R̂ → tracker'], 'sh');
+  block('fl', 1090, 432, 130, H, 'Validity flag', ['|c₁* − c₂*| vs g', 'g = 9.74 m/s'], 'sh');
+  wire([[920, L1 + H / 2], [932, L1 + H / 2], [932, 405], [945, 405]], 'l1');
+  wire([[920, L2 + H / 2], [932, L2 + H / 2], [932, 429], [945, 429]], 'l2');
+  wire([[1073, 413], [1080, 413], [1080, L1 + H / 2], [1090, L1 + H / 2]], 'sh');
+  wire([[1080, 413], [1080, L2 + H / 2], [1090, L2 + H / 2]], 'sh');
+  // fast-time bin side information
+  wire([[370, L1], [370, 316], [1155, 316], [1155, L1]], 'ctl');
+  el('text', { x: 760, y: 312, 'text-anchor': 'middle', class: 'mono' }, null, 'fast-time bin n̂ (range)');
+
+  // Timing strip: 22 px per ms from x = 80
+  var x0 = 80, k = 22, ty = 586, th = 30;
+  el('rect', { x: x0, y: ty, width: 5.12 * k, height: th, class: 't1' });
+  el('rect', { x: x0 + 5.12 * k, y: ty, width: 6.40 * k, height: th, class: 't2' });
+  el('rect', { x: x0 + 11.52 * k, y: ty, width: 38.48 * k, height: th, class: 'idle' });
+  el('text', { x: x0 + 2.56 * k, y: ty + 19, 'text-anchor': 'middle', class: 'mono', style: 'fill:var(--sheet)' }, null, '128×40 µs');
+  el('text', { x: x0 + 8.32 * k, y: ty + 19, 'text-anchor': 'middle', class: 'mono', style: 'fill:var(--sheet)' }, null, '128×50 µs');
+  el('text', { x: x0 + 30.76 * k, y: ty + 19, 'text-anchor': 'middle', class: 'mono' }, null, 'processing, other waveforms or TDM cycling · 38.48 ms');
+  [[0, '0'], [5.12, '5.12'], [11.52, '11.52'], [50, '50 ms']].forEach(function (t) {
+    var x = x0 + t[0] * k;
+    el('line', { x1: x, y1: ty + th, x2: x, y2: ty + th + 7, stroke: 'var(--muted)', 'stroke-width': 1 });
+    el('text', { x: x, y: ty + th + 20, 'text-anchor': t[0] === 50 ? 'end' : 'middle', class: 'mono' }, null, t[1]);
+  });
+  el('text', { x: x0, y: 656, class: 'mono' }, null, 'Two CPIs = 11.52 ms = 23% of the frame. Chirp types are sent in blocks; alternating them chirp by chirp would give both lanes the same spacing Tc1 + Tc2.');
+
+  // Stage cards
+  var cards = [
+    ['seq', '', 'Chirp sequencer', 'Emits 128 chirps of 40 µs, then 128 chirps of 50 µs, once per 50 ms frame. Also tells the demultiplexer which block is on air.', [['Tc1 : Tc2', '4 : 5'], ['τ = gcd', '10 µs'], ['CPI 1 / 2', '5.12 / 6.40 ms']]],
+    ['syn', '', 'Synthesizer, PA, antennas', 'Generates the 77 GHz linear up-chirp and drives the transmit antenna; the same ramp is the local oscillator for the mixer.', [['f0', '77 GHz'], ['B', '300 MHz'], ['ΔR', '0.5 m']]],
+    ['mix', '', 'LNA, mixer, IF filter, ADC', 'De-chirps the echo into a beat tone whose frequency carries range plus a Doppler coupling term, then samples it.', [['Ns', '256 per chirp'], ['fs', 'Ns / Tc'], ['coupling', '0.72 m at 70 m/s']]],
+    ['dmx', '', 'Block demultiplexer', 'Routes block 1 to lane 1 and block 2 to lane 2 so each lane sees a uniform slow-time spacing.', [['lane 1', 'Tc1 = 40 µs'], ['lane 2', 'Tc2 = 50 µs']]],
+    ['win1', 'l1', 'Lane 1 · range–Doppler map', 'Hann window in both axes, 2D-FFT, peak detection and optional interpolation on the 40 µs block.', [['Δv1', '0.380 m/s'], ['P1', '48.70 m/s'], ['vmax,1', '±24.35 m/s']]],
+    ['win2', 'l2', 'Lane 2 · range–Doppler map', 'The same chain on the 50 µs block. Its different ambiguity period is what makes the integer recoverable.', [['Δv2', '0.304 m/s'], ['P2', '38.96 m/s'], ['vmax,2', '±19.48 m/s']]],
+    ['pk1', 'each', 'Peak detection', 'The binding stage. Failures below 17.7 dB output SNR are all localization failures; a CFAR threshold set for Ploc ≥ 0.99 sets the operating point.', [['Pres ≥ 0.95', '≥ 17.7 dB'], ['cells', '32,768'], ['FFT cost', '245,760 butterflies']]],
+    ['ip1', 'each', 'Sub-bin interpolation', 'Grandke three-bin estimator for the Hann window. Removes the quantization floor and the integer errors at extreme ratios.', [['v RMSE', '0.072 → 0.022 m/s'], ['R RMSE', '0.151 → 0.047 m'], ['vs CRB', '× 2.4–2.5']]],
+    ['cd1', 'each', 'Candidate sets', 'Each folded estimate is unfolded by multiples of its period, keeping only values inside the physical bound.', [['Vc', '71 m/s'], ['must keep', 'Vc ≤ Pcomb / 2'], ['|𝒞1|, |𝒞2|', '2–3, 3–4']]],
+    ['mt', 'sh', 'Closest-pair matching', 'Picks the pair of candidates that agree best and averages them. Unique within ±Pcomb/2.', [['Pcomb', '194.8 m/s'], ['interval', '±97.4 m/s'], ['margin μ½', '14.2']]],
+    ['rc', 'sh', 'Range correction', 'Removes the Doppler coupling from the beat frequency using the resolved velocity.', [['uncorrected', '0.443 m'], ['folded v̂1', '0.430 m'], ['resolved v̂', '0.149 m']]],
+    ['fl', 'sh', 'Validity flag', 'When the best pair still disagrees by a sizeable fraction of g, the measurement is flagged instead of passed to the tracker.', [['g', '9.74 m/s'], ['g / 2', '4.87 m/s']]]
+  ];
+  var alias = { syn: 'syn', pa: 'syn', lna: 'mix', mix: 'mix', adc: 'mix', win2: 'win2', pk2: 'pk1', ip2: 'ip1', fv1: 'cd1', fv2: 'cd1', cd2: 'cd1' };
+  var host = document.getElementById('cards');
+  cards.forEach(function (c) {
+    var d = document.createElement('article');
+    d.className = 'card ' + c[1]; d.id = 'card-' + c[0];
+    var h = '<span class="tag">' + (c[1] === 'l1' ? 'lane 1' : c[1] === 'l2' ? 'lane 2' : c[1] === 'sh' ? 'combined' : c[1] === 'each' ? 'each lane' : 'front end') + '</span><h3>' + c[2] + '</h3><p>' + c[3] + '</p><dl>';
+    c[4].forEach(function (r) { h += '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>'; });
+    d.innerHTML = h + '</dl><button type="button" class="xbtn">Close</button>';
+    d.hidden = true;
+    d.querySelector('.xbtn').addEventListener('click', function () { clearBlock(true); });
+    host.appendChild(d);
+  });
+  var curBlock = null, blockTrigger = null;
+  function clearBlock(refocus) {
+    if (curBlock === null) return;
+    var prev = curBlock; curBlock = null; host.hidden = true;
+    host.querySelectorAll('.card').forEach(function (c) { c.hidden = true; c.classList.remove('on'); });
+    svg.querySelectorAll('.blk').forEach(function (g) { g.classList.remove('on'); });
+    if (refocus) { var g = svg.querySelector('.blk[data-id="' + prev + '"]'); if (g) g.focus({ preventScroll: true }); }
+  }
+  function select(id, scroll) {
+    if (curBlock === id) { clearBlock(false); return; }
+    var cid = alias[id] || id; curBlock = id; host.hidden = false;
+    svg.querySelectorAll('.blk').forEach(function (g) { g.classList.toggle('on', g.getAttribute('data-id') === id); });
+    host.querySelectorAll('.card').forEach(function (c) { var on = c.id === 'card-' + cid; c.hidden = !on; c.classList.toggle('on', on); });
+    var card = document.getElementById('card-' + cid);
+    if (scroll && card) card.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+  svg.querySelectorAll('.blk').forEach(function (g) {
+    var id = g.getAttribute('data-id');
+    g.addEventListener('click', function () { select(id, true); });
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(id, true); } });
+  });
+
+  var INFO = {
+    fe: { name: 'Radar front end', tag: 'Section · RF chain', color: 'var(--ink)',
+      lead: 'One RF chain serves both chirp durations. The sequencer sends 128 chirps of 40 µs and then 128 chirps of 50 µs; the synthesizer ramp drives the PA and is reused as the mixer LO, so each echo is de-chirped into a beat tone and sampled.',
+      eq: 's[n,m] = A·exp{ j2π[ (2SR/c + 2v/λ)·n/fs + (2v/λ)·m·Tc ] + jφ0 } + w[n,m]   (1)',
+      points: [
+        'The slow-time term samples the Doppler phase once per chirp, so the chirp duration sets vmax = λ/(4Tc): ±24.35 m/s at 40 µs and ±19.48 m/s at 50 µs.',
+        'The 2v/λ term inside the fast-time bracket is range–Doppler coupling. At 70 m/s it shifts the apparent range by 0.72 m (1.4 bins) for Tc1 and 0.90 m for Tc2.',
+        'The two durations must be sent in blocks. Alternating them chirp by chirp would sample both subsequences every Tc1 + Tc2 = 90 µs, giving both lanes the same ambiguity period.'
+      ],
+      facts: [['f0', '77 GHz'], ['λ', '3.896 mm'], ['B', '300 MHz'], ['ΔR', '0.5 m'], ['Ns', '256, fs = Ns / Tc']],
+      rel: [['seq', 'Chirp sequencer'], ['syn', 'Synthesizer'], ['mix', 'Mixer'], ['adc', 'IF filter + ADC'], ['dmx', 'Demux']] },
+    scene: { name: 'Scene and propagation', tag: 'Section · simulated scene', color: 'var(--muted)',
+      lead: 'Each trial places a single point target at a random range and velocity, so both fall at arbitrary positions within their bins. The noise is circularly symmetric white Gaussian; there is no clutter, multipath or interference.',
+      eq: 'R ~ U(10, 110) m,   v ~ U(−70, 70) m/s,   φ0 ~ U(0, 2π)',
+      points: [
+        'Oncoming highway traffic closes at up to ±70 m/s (±250 km/h), almost three times vmax of a 40 µs chirp. Only 34.8% of uniformly drawn targets fall inside the single-chirp interval.',
+        'Folding is deterministic, not noise: the single-Tc RMSE is 39.1 m/s at 20.2 dB and stays between 39.1 and 43.0 m/s across the whole 30 dB sweep.',
+        'Output SNR = input SNR + 45.2 dB of coherent gain (10 log10 Ns·Nc). The Hann window costs a further 3.5 dB and scalloping 0.9 dB on average.'
+      ],
+      facts: [['trials', '135,000 (27 SNR × 5,000)'], ['design bound', '±70 m/s'], ['candidate bound Vc', '71 m/s']],
+      rel: [['pk1', 'Peak detection']] },
+    lanes: { name: 'Two range–Doppler lanes', tag: 'Section · per-lane DSP', color: 'var(--lane1)',
+      lead: 'Each chirp block becomes its own 256 × 128 range–Doppler map. The lanes are identical except for the chirp duration, which gives each a different ambiguity period. That difference is the only information the matching stage needs.',
+      eq: 'v̂i = m̃i · λ / (2·Nc·Tci),   Pi = λ / (2·Tci)   (2)',
+      points: [
+        'Peak detection is the binding stage. Every failure in 135,000 trials was a localization failure; Pres passes 0.50 at 15.3 dB, 0.95 at 17.7 dB and 0.99 at 18.6 dB output SNR.',
+        'The collapse occurs where the scalloped peak no longer clears the largest of 32,767 noise cells, which sits about 10.2 dB above the mean noise level (mode at ln M).',
+        'Without interpolation the conditional RMSE floors at the bin-quantization limit of 0.070 m/s. Grandke interpolation (4) lowers it to 0.022 m/s at 20.2 dB, 2.4 times the CRB.'
+      ],
+      facts: [['Δv1 / Δv2', '0.380 / 0.304 m/s'], ['P1 / P2', '48.70 / 38.96 m/s'], ['2D-FFT', '245,760 butterflies per map'], ['map memory', '128 KB (16-bit complex)']],
+      rel: [['win1', 'Hann + 2D-FFT'], ['pk1', 'Peak detection'], ['ip1', 'Interpolation'], ['fv1', 'Folded v̂'], ['cd1', 'Candidates']] },
+    comb: { name: 'Combination', tag: 'Section · matching and outputs', color: 'var(--shared)',
+      lead: 'The two lanes meet only here. Each folded estimate is unfolded into candidates within ±Vc, the closest pair across the two sets gives the velocity, and that velocity is fed back to correct the range.',
+      eq: 'Pcomb = lcm(P1, P2) = p·P1 = q·P2 = λ/(2τ) = 194.8 m/s,   g = Pcomb/(p·q) = 9.74 m/s',
+      points: [
+        'The velocity is unique within ±Pcomb/2 = ±97.4 m/s, four times the 40 µs interval. Vc must stay at or below Pcomb/2; at Vc = 140 m/s, Pres fell to 0.879.',
+        'Wrong pairs sit at least g apart, so an integer error needs a combined error above g/2 = 4.87 m/s. The half-bin margin is 14.2; in the ratio sweep integer errors appeared only at 80:81, where it drops to 0.80.',
+        'Correcting the coupling with the resolved v̂ cuts the range RMSE from 0.443 m to 0.149 m. The residual |c1* − c2*| flags doubtful measurements before they reach the tracker.'
+      ],
+      facts: [['Tc1 : Tc2', '4 : 5, τ = 10 µs'], ['cost', '≤ 12 differences per target'], ['integer errors', '0 of 55,774 located trials']],
+      rel: [['cd1', 'Candidates'], ['mt', 'Closest pair'], ['rc', 'Range correction'], ['fl', 'Validity flag']] },
+    timing: { name: 'Frame timing', tag: 'Section · 50 ms frame', color: 'var(--lane2)',
+      lead: 'The scheme costs observation time rather than computation. Both coherent processing intervals fit in the first 11.52 ms of a 50 ms frame.',
+      eq: 'CPI1 = 128 × 40 µs = 5.12 ms,   CPI2 = 128 × 50 µs = 6.40 ms',
+      points: [
+        'The remaining 38.48 ms is free for processing, other waveforms or TDM transmitter cycling.',
+        'Compared with a single 40 µs block (5.12 ms), the dual scheme needs 2.25 times the observation time.',
+        'At 70 m/s a target moves 0.81 m across both CPIs, 1.6 range bins. The simulation neglects this migration, which limits how far its numbers carry.'
+      ],
+      facts: [['frame', '50 ms (20 Hz)'], ['duty', '23%'], ['displacement', '0.81 m at 70 m/s']],
+      rel: [['seq', 'Chirp sequencer']] }
+  };
+  var ORDER = ['fe', 'scene', 'lanes', 'comb', 'timing'];
+  var panel = document.getElementById('info');
+  var chips = document.getElementById('chips');
+  var lastTrigger = null, current = null;
+  function esc(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  ORDER.forEach(function (k) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.id = 'chip-' + k;
+    b.setAttribute('aria-pressed', 'false'); b.textContent = INFO[k].name;
+    b.addEventListener('click', function () { current === k ? closeInfo() : openInfo(k, b); });
+    chips.appendChild(b);
+  });
+  function openInfo(k, trigger) {
+    var d = INFO[k]; current = k; lastTrigger = trigger || null;
+    var h = '<header><span class="tag">' + esc(d.tag) + '</span><button type="button" class="xbtn" id="info-close">Close</button>' +
+      '<h2 id="info-title">' + esc(d.name) + '</h2></header><div class="col"><p>' + esc(d.lead) + '</p><div class="eq">' + esc(d.eq) + '</div>' +
+      '<h4>Key points</h4><ul>' + d.points.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="col"><h4>Numbers</h4><dl>' + d.facts.map(function (f) { return '<dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd>'; }).join('') + '</dl>';
+    if (d.rel.length) h += '<h4>Blocks in this section</h4><div class="rel">' + d.rel.map(function (r) { return '<button type="button" data-blk="' + r[0] + '">' + esc(r[1]) + '</button>'; }).join('') + '</div>';
+    h += '</div>';
+    panel.innerHTML = h;
+    panel.style.setProperty('--sec', d.color);
+    panel.hidden = false;
+    svg.querySelectorAll('.hit').forEach(function (r) { r.classList.toggle('on', r.getAttribute('data-sec') === k); });
+    chips.querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', c.id === 'chip-' + k ? 'true' : 'false'); });
+    document.getElementById('info-close').addEventListener('click', closeInfo);
+    panel.querySelectorAll('.rel button').forEach(function (b) { b.addEventListener('click', function () { select(b.getAttribute('data-blk'), true); }); });
+    panel.focus({ preventScroll: true });
+    panel.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+  function closeInfo() {
+    if (current === null) return;
+    panel.hidden = true; current = null;
+    svg.querySelectorAll('.hit').forEach(function (r) { r.classList.remove('on'); });
+    chips.querySelectorAll('.chip').forEach(function (c) { c.setAttribute('aria-pressed', 'false'); });
+    if (lastTrigger && lastTrigger.focus) lastTrigger.focus({ preventScroll: true });
+  }
+  svg.querySelectorAll('.hit, .sec-i').forEach(function (n) {
+    var k = n.getAttribute('data-sec');
+    n.addEventListener('click', function () { openInfo(k, n.classList.contains('sec-i') ? n : document.getElementById('chip-' + k)); });
+    n.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openInfo(k, n); } });
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeInfo(); clearBlock(false); } });
+})();
+</script>
+</body>
+</html>
