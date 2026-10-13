@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Dual-Chirp Radar와 비교할 대표 선행연구 Roos et al. (ICMIM 2018) TDM-MIMO Doppler 확장 방식의 시스템 블록도와 대응표.">
+<title>Roos 2018 시스템 블록도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: the prior-art block diagram on the left, the selected block's explanation on the right,
+   then the correspondence table to the Dual-Chirp blocks across the full width. */
+:root {
+  --bg: #f3f4f1; --sheet: #fbfbf9; --ext: #ffffff; --note: #e8eae5;
+  --ink: #1d2430; --ink2: #4a5361; --muted: #6b7380; --rule: #c9cec9; --grid: #e3e6e1;
+  --proc: #6a3a9e; --proc-tint: #ece4f5; --hw: #2f6f5e; --hw-tint: #e0eee9; --link: #2856b8;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Archivo", sans-serif;
+  --ui: "Archivo", "Noto Sans KR", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181d; --sheet: #1a1f26; --ext: #20262e; --note: #222a33;
+    --ink: #e5e8ec; --ink2: #b7bec8; --muted: #8d96a1; --rule: #39414b; --grid: #232a32;
+    --proc: #b894e6; --proc-tint: #2c2340; --hw: #6fc0a6; --hw-tint: #1b3330; --link: #7fa2ec; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14181d; --sheet: #1a1f26; --ext: #20262e; --note: #222a33;
+  --ink: #e5e8ec; --ink2: #b7bec8; --muted: #8d96a1; --rule: #39414b; --grid: #232a32;
+  --proc: #b894e6; --proc-tint: #2c2340; --hw: #6fc0a6; --hw-tint: #1b3330; --link: #7fa2ec; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.7; word-break: keep-all; overflow-wrap: anywhere; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; display: grid; gap: 22px; }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } }
+.eyebrow { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+h1 { margin: 0; font-family: var(--ui); font-size: clamp(24px, 3vw, 30px); font-weight: 700; }
+h2 { margin: 0; font-family: var(--ui); font-size: 21px; font-weight: 700; }
+h3 { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); }
+p { margin: 0; }
+.lede { max-width: 66ch; color: var(--ink2); }
+.links { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; }
+a { color: var(--link); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--proc); outline-offset: 2px; }
+.main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 920px) { .main { grid-template-columns: 1fr; } }
+.left { display: grid; gap: 10px; min-width: 0; }
+.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+.sheet svg { display: block; width: 100%; min-width: 560px; height: auto; }
+svg text { font-family: var(--ui); fill: var(--ink); }
+svg .t-ttl { font-size: 13px; font-weight: 600; }
+svg .t-sub { font-size: 11px; fill: var(--ink2); }
+svg .t-lbl { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+svg .t-grp { font-size: 12px; font-weight: 600; fill: var(--sheet); }
+svg .frame { fill: none; stroke: var(--ink); stroke-width: 1.4; stroke-dasharray: 6 4; }
+svg .grp-tag { fill: var(--ink); }
+svg .w { fill: none; stroke: var(--ink2); stroke-width: 1.3; }
+svg .w.d { stroke-dasharray: 4 3; }
+svg .ah { fill: var(--ink2); }
+svg .lbox { fill: var(--sheet); stroke: var(--rule); }
+svg .blk { cursor: pointer; }
+svg .blk rect { stroke-width: 1.3; }
+svg .blk.proc rect { fill: var(--proc-tint); stroke: var(--proc); }
+svg .blk.hw rect { fill: var(--hw-tint); stroke: var(--hw); }
+svg .blk.ext rect { fill: var(--ext); stroke: var(--ink2); }
+svg .blk.ghost rect { fill: none; stroke: var(--muted); stroke-dasharray: 4 3; }
+svg .blk.ghost text { fill: var(--muted); }
+svg .blk:hover rect, svg .blk:focus rect { stroke-width: 2.4; }
+svg .blk:focus { outline: none; }
+svg .blk.on rect { stroke-width: 3; }
+svg .hit { fill: transparent; cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+.sw { width: 13px; height: 13px; border: 1.5px solid; border-radius: 2px; display: inline-block; }
+.sw.p { border-color: var(--proc); background: var(--proc-tint); } .sw.h { border-color: var(--hw); background: var(--hw-tint); } .sw.e { border-color: var(--ink2); background: var(--ext); } .sw.g { border-color: var(--muted); border-style: dashed; }
+.panel { display: grid; gap: 12px; min-width: 0; }
+.tags { display: flex; gap: 10px; align-items: center; }
+.tag { font-size: 12px; padding: 1px 8px; border-radius: 3px; background: var(--proc-tint); color: var(--proc); font-weight: 500; }
+.tag.hw { background: var(--hw-tint); color: var(--hw); } .tag.ext, .tag.ghost { background: var(--note); color: var(--ink2); }
+.ref { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.ptitle { font-size: 22px; font-weight: 700; font-family: var(--ui); }
+ul.b { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+thead th { font-size: 12px; font-weight: 500; color: var(--muted); border-bottom: 1.5px solid var(--ink2); }
+table.kv td:last-child { text-align: right; font-family: var(--mono); font-size: 12.5px; }
+table.kv td small { color: var(--muted); font-size: 11px; }
+.cmp { border-left: 3px solid var(--link); padding: 2px 0 2px 14px; display: grid; gap: 6px; font-size: 14px; color: var(--ink2); }
+.cmp .h { font-size: 12px; color: var(--muted); }
+.rel { display: flex; flex-wrap: wrap; gap: 6px; }
+.rel button { font: 13px var(--ui); background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 3px 10px; cursor: pointer; }
+.rel button:hover { border-color: var(--ink); }
+.box { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+.box table th:first-child, .box table td:first-child { padding-left: 14px; }
+section.map { display: grid; gap: 12px; border-top: 1px solid var(--rule); padding-top: 22px; }
+td.n { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; max-width: 840px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <div class="eyebrow">Roos et al. · Enhancement of Doppler Unambiguity for Chirp-Sequence Modulated TDM-MIMO Radars · ICMIM 2018</div>
+    <h1>Roos 2018 시스템 블록도</h1>
+    <p class="lede">Dual-Chirp Radar와 비교할 대표 선행연구입니다. 블록이나 묶음 이름을 누르면 그 부분의 역할, 동작, 수치, Dual-Chirp 회로의 어느 부분에 대응하는지가 나옵니다.</p>
+    <div class="links"><a href="../index.html">← Dual-Chirp 블록도</a><a href="../logic/index.html">Dual-Chirp 논리 회로도</a><a href="#map">Dual-Chirp와 대응표 ↓</a></div>
+  </header>
+
+  <div class="main">
+    <div class="left">
+      <div class="sheet"><svg id="dia" viewBox="0 0 640 600" role="img" aria-label="Roos 2018 블록도: 표적, TDM chirp 시퀀서, TX 2개, RX 10개와 ADC, 거리 FFT, TX별 interlaced Doppler DFT, OS-CFAR와 피크 탐색, 위상 추세, 접힘 횟수 추정, Doppler와 위상 보정, 방향 추정, 추적기"></svg></div>
+      <div class="legend"><span><i class="sw p"></i>신호 처리</span><span><i class="sw h"></i>하드웨어 (송수신)</span><span><i class="sw e"></i>외부 (표적, 추적기)</span><span><i class="sw g"></i>논문에 없는 단계</span><span>점선 화살표: 제어·부가 정보</span></div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <section class="map" id="map">
+    <h2>Dual-Chirp와 대응표</h2>
+    <p class="lede">Roos 방식은 송신기를 번갈아 쓴 <b>시간 차이를 가상 배열의 공간 위상</b>으로 읽어 접힘 횟수를 찾고, Dual-Chirp는 <b>chirp 길이가 다른 두 블록의 주기 차이</b>로 찾습니다. 같은 문제를 푸는 블록은 대응되지만, 각도 추정과 유효성 검사처럼 한쪽에만 있는 블록도 있습니다.</p>
+    <div class="box"><table id="maptab"><thead><tr><th>Roos 2018 블록</th><th>Dual-Chirp 대응 블록</th><th>차이</th></tr></thead><tbody></tbody></table></div>
+    <h3>같은 조건 시뮬레이션 요약 (비교 분석 페이지에서)</h3>
+    <div class="box"><table><thead><tr><th>지표</th><th>Dual-Chirp</th><th>Roos · 동일 하드웨어 (Tr 40 µs)</th><th>Roos · 동일 요구사항 (Tr 13.5 µs)</th></tr></thead><tbody>
+      <tr><td>복원 속도 범위</td><td class="n">±97.4 m/s</td><td class="n">±24.35 m/s</td><td class="n">±72.15 m/s</td></tr>
+      <tr><td>P<sub>ok</sub> ≥ 0.95 필요 맵 SNR</td><td class="n">12.9 dB</td><td class="n">도달 못함 (최대 36%)</td><td class="n">10.7 dB</td></tr>
+      <tr><td>경고 없는 오류 @ 맵 SNR 9 dB</td><td class="n">32.2% → 0.2% (거리 일치 검사)</td><td class="n">71.3%</td><td class="n">25.5%</td></tr>
+      <tr><td>v RMSE @ 20 dB</td><td class="n">0.012 m/s</td><td class="n">0.007 m/s</td><td class="n">0.021 m/s</td></tr>
+      <tr><td>ADC 샘플링</td><td class="n">6.40 / 5.12 MS/s</td><td class="n">6.40 MS/s</td><td class="n">18.96 MS/s</td></tr>
+      <tr><td>관측 시간</td><td class="n">11.52 ms</td><td class="n">10.24 ms</td><td class="n">3.46 ms</td></tr>
+      <tr><td>필요 하드웨어</td><td class="n">TX 1, RX 1부터</td><td class="n">TX 2 + RX 배열</td><td class="n">TX 2 + RX 배열</td></tr>
+    </tbody></table></div>
+    <p class="lede">공통: 77 GHz, B = 300 MHz, N<sub>s</sub> = 256, 프레임당 chirp 256개, RX 4개, 표적 v ~ U(−70, 70) m/s. 자세한 조건과 곡선은 <a href="../index.html#s3">비교 분석</a>에 있습니다.</p>
+  </section>
+
+  <footer>논문 수치는 Roos et al., ICMIM 2018 본문에서 가져왔습니다. 논문은 단일 표적 시뮬레이션과 차량 측정 장면 하나로 방식을 보였고, SNR별 성공률 같은 통계는 내지 않았습니다. 위 비교 수치는 두 방식을 같은 시뮬레이터에 다시 구현해 얻은 값이며 논문의 값이 아닙니다.</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('dia');
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  function el(n, a, p, t) { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; (p || svg).appendChild(e); return e; }
+  function w(pts, d) {
+    el('polyline', { points: pts.map(p => p.join(',')).join(' '), class: 'w' + (d ? ' d' : '') });
+    const a = pts[pts.length - 2], b = pts[pts.length - 1], ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    const p1 = [b[0] - 8 * Math.cos(ang) + 4 * Math.sin(ang), b[1] - 8 * Math.sin(ang) - 4 * Math.cos(ang)];
+    const p2 = [b[0] - 8 * Math.cos(ang) - 4 * Math.sin(ang), b[1] - 8 * Math.sin(ang) + 4 * Math.cos(ang)];
+    el('polygon', { points: [b, p1, p2].map(p => p.join(',')).join(' '), class: 'ah' });
+  }
+  function lbl(x, y, s) { const t = el('text', { x, y, class: 't-lbl', 'text-anchor': 'middle' }, null, s); const bb = t.getBBox(); const r = el('rect', { x: bb.x - 5, y: bb.y - 2, width: bb.width + 10, height: bb.height + 4, rx: 3, class: 'lbox' }); svg.insertBefore(r, t); }
+  const BL = {};
+  function blk(id, x, y, ww, h, t, sub, cls) {
+    const g = el('g', { class: 'blk ' + cls, 'data-id': id, tabindex: 0, role: 'button', 'aria-label': t });
+    el('rect', { x, y, width: ww, height: h, rx: 5 }, g);
+    el('text', { x: x + ww / 2, y: y + h / 2 - 3, 'text-anchor': 'middle', class: 't-ttl' }, g, t);
+    el('text', { x: x + ww / 2, y: y + h / 2 + 14, 'text-anchor': 'middle', class: 't-sub' }, g, sub);
+    BL[id] = { x, y, w: ww, h };
+  }
+  function frame(id, x, y, ww, h, name) {
+    el('rect', { x, y, width: ww, height: h, rx: 8, class: 'frame' });
+    const g = el('g', { class: 'blk', 'data-id': id, tabindex: 0, role: 'button', 'aria-label': name });
+    const tw = name.length * 7.2 + 20;
+    el('rect', { x: x + 14, y: y - 11, width: tw, height: 22, rx: 3, class: 'grp-tag' }, g);
+    el('text', { x: x + 24, y: y + 4, class: 't-grp' }, g, name);
+  }
+  // scene
+  blk('scene', 230, 12, 180, 50, 'Targets', 'moving vehicle, static scene', 'ext');
+  frame('fe', 20, 94, 600, 108, 'Front end · 76.41 GHz');
+  blk('seq', 40, 120, 170, 56, 'TDM chirp sequence', 'TX0, TX1, TX0, … Tr 27 µs', 'hw');
+  blk('tx', 240, 120, 160, 56, 'TX0 / TX1', 'one TX per chirp', 'hw');
+  blk('rx', 430, 120, 170, 56, 'RX ×10 + ADC', '25 MHz, 20.48 µs chirp', 'hw');
+  frame('sp', 20, 236, 600, 300, 'Signal processing');
+  blk('rfft', 40, 262, 170, 56, 'Range FFT', 'per chirp, 20 virtual ch.', 'proc');
+  blk('dfft', 240, 262, 170, 56, 'Interlaced Doppler DFT', 'per TX, zero-padded', 'proc');
+  blk('cfar', 430, 262, 170, 56, 'OS-CFAR + peak', 'detection', 'proc');
+  blk('phase', 430, 362, 170, 56, 'Phase trend', 'across virtual elements', 'proc');
+  blk('xi', 240, 362, 170, 56, 'ξ estimation', 'offset e^{j2πξm/M}', 'proc');
+  blk('corr', 40, 362, 170, 56, 'Doppler · phase corr.', 'phase-adapted DFT', 'proc');
+  blk('doa', 40, 460, 170, 56, 'DOA estimation', 'virtual ULA', 'proc');
+  blk('chk', 240, 460, 170, 56, 'Validity check', '논문에 없음', 'ghost');
+  blk('trk', 430, 552, 170, 40, 'Tracker', 'v, R, θ', 'ext');
+  w([[210, 148], [240, 148]]);
+  w([[320, 120], [320, 62]]); lbl(352, 92, 'chirps');
+  w([[410, 37], [515, 37], [515, 120]]); lbl(470, 30, 'echo');
+  w([[515, 176], [515, 214], [125, 214], [125, 262]]); lbl(320, 214, 'samples');
+  w([[210, 290], [240, 290]]); w([[410, 290], [430, 290]]);
+  w([[515, 318], [515, 362]]); lbl(560, 344, 'peak bin');
+  w([[430, 390], [410, 390]]); w([[240, 390], [210, 390]]);
+  w([[125, 418], [125, 460]]);
+  w([[125, 516], [125, 566], [430, 566]]); lbl(170, 566, 'θ');
+  w([[190, 418], [190, 440], [225, 440], [225, 584], [430, 584]]); lbl(330, 584, 'v (corrected)');
+  w([[325, 418], [325, 460]], true);
+  // info
+  const I = {
+    sys: { tag: '시스템', cls: '', ref: 'ICMIM 2018', title: 'Roos 2018 · TDM-MIMO Doppler 확장',
+      desc: 'chirp-sequence 레이더에서 송신기 여러 개를 시간 분할(TDM)로 번갈아 쓰면 각 송신기의 chirp 간격이 길어져 모호하지 않은 속도 범위가 줄어듭니다. 이 논문은 변조를 바꾸지 않고, TX마다 늦게 송신된 만큼 붙는 Doppler 위상을 가상 배열에서 읽어 줄어든 범위를 되찾습니다.',
+      problem: ['TDM에서 TX가 M개면 한 TX의 chirp 간격이 M배가 되어 속도 범위가 1/M로 줄어듭니다.', 'TDM은 가상 소자 사이에 Doppler에 비례하는 위상 오차를 넣어 각도 추정을 망칩니다.', '두 문제를 chirp 타이밍이나 시작 주파수를 바꾸지 않고 신호 처리만으로 함께 풉니다.'],
+      kv: [['반송파 · 대역폭', '76.41 GHz · 594 MHz'], ['chirp 길이 · 반복 시간', '20.48 µs · 27.015 µs'], ['chirp 수', '256'], ['송수신', '2 TX (TDM) × 10 RX'], ['속도 범위', '±18.15 → ±36.01 m/s (×2)'], ['검증', '시뮬레이션 1표적, 측정 1장면']],
+      cmp: 'Dual-Chirp는 송신기 하나로 chirp 길이가 다른 두 블록을 보내 시간 영역에서 접힘을 풉니다. Roos 방식은 단일 chirp 반복 시간이 정하는 ±λ/(4Tr)을 넘지 못하고, Dual-Chirp는 같은 40 µs chirp으로 ±97.4 m/s까지 복원합니다.',
+      cmpLink: ['../logic/index.html#match', 'Dual-Chirp 논리 회로도에서 MATCH 보기 →'], rel: ['seq', 'dfft', 'phase', 'xi', 'corr'] },
+    scene: { tag: '외부', cls: 'ext', ref: '측정', title: 'Targets', desc: '측정은 움직이는 차량에서 정지한 장면을 기록했습니다. 자차 속도가 TDM 범위를 넘어서 정지 물체의 Doppler가 접히도록 한 설정입니다. 시뮬레이션은 한 칸 넘게 접힌 단일 표적입니다.',
+      kv: [['측정 장면', '정지 장면, 이동 차량'], ['관측된 위상 점프', '−π (ξ = −1)']], cmp: 'Dual-Chirp 비교 분석은 v ~ U(−70, 70) m/s의 무작위 표적 수천 개로 통계를 냈습니다.', rel: ['tx', 'rx'] },
+    fe: { tag: '하드웨어', cls: 'hw', ref: '측정 장비', title: 'Front end · 76.41 GHz', desc: '송신기 2개를 chirp마다 번갈아 켜고 수신기 10개로 받습니다. 송신기 간격이 수신 배열 길이와 맞으면 가상 배열이 끊김 없이 이어집니다.',
+      kv: [['TX', '2 (TDM)'], ['RX', '10'], ['가상 배열', '20 소자'], ['ADC', '25 MHz']], cmp: 'Dual-Chirp는 TX 1개로 동작하고, 각도를 얻으려면 RX 배열을 따로 붙여야 합니다.', rel: ['seq', 'tx', 'rx'] },
+    seq: { tag: '하드웨어', cls: 'hw', ref: '변조', title: 'TDM chirp sequence', desc: '같은 chirp을 256번 보내되 송신기를 chirp마다 바꿉니다. 한 송신기의 chirp 간격은 M·Tr이 되어 TX별 모호성 범위가 M배 줄어듭니다.',
+      kv: [['chirp 반복 시간 Tr', '27.015 µs'], ['TX별 간격', '2·Tr = 54.03 µs'], ['MIMO 범위', '±18.15 m/s'], ['SIMO 범위', '±36.01 m/s']], cmp: 'Dual-Chirp의 SEQ는 TX를 바꾸지 않고 chirp 길이를 블록 단위로 바꿉니다(40 µs ×128, 50 µs ×128).',
+      cmpLink: ['../logic/index.html#seq', 'Dual-Chirp SEQ 보기 →'], rel: ['tx', 'dfft'] },
+    tx: { tag: '하드웨어', cls: 'hw', ref: '송신', title: 'TX0 / TX1', desc: '한 번에 송신기 하나만 켭니다. TX1의 신호는 TX0보다 Tr만큼 늦게 나가므로 같은 표적에서도 Doppler에 비례하는 위상이 더 붙습니다. 이 위상이 오차이자, 접힘 횟수를 알려 주는 정보입니다.',
+      kv: [['TX 수 M', '2'], ['추가 위상', '2π·(2v/λ)·Tr']], cmp: 'Dual-Chirp에는 대응 블록이 없습니다.', rel: ['seq', 'phase'] },
+    rx: { tag: '하드웨어', cls: 'hw', ref: '수신', title: 'RX ×10 + ADC', desc: '수신기 10개가 동시에 받고 25 MHz로 샘플링합니다.',
+      kv: [['RX', '10'], ['샘플링', '25 MHz'], ['chirp 길이', '20.48 µs']], cmp: 'Dual-Chirp 비교 조건 B에서는 같은 ±70 m/s를 덮기 위해 chirp이 13.5 µs로 짧아져 ADC가 19 MS/s 필요했습니다.', rel: ['rfft'] },
+    sp: { tag: '신호 처리', cls: '', ref: '처리 체인', title: 'Signal processing', desc: '거리 압축, TX별 Doppler DFT, 검출, 위상 추세, 접힘 횟수 추정, 보정, 방향 추정의 일곱 단계입니다.',
+      kv: [['단계 수', '7'], ['검출', 'OS-CFAR']], cmp: 'Dual-Chirp 회로도는 FFT 이후 결정 경로를 PKD → NBR → GRK → FV → CAND → MATCH → RC → FLAG로 구현했습니다.', cmpLink: ['../logic/index.html', 'Dual-Chirp 논리 회로도 보기 →'], rel: ['rfft', 'dfft', 'cfar', 'phase', 'xi', 'corr', 'doa'] },
+    rfft: { tag: '신호 처리', cls: '', ref: '처리 단계 1 / 7', title: 'Range FFT', desc: 'chirp마다 거리 압축을 합니다.', kv: [['입력', '20 가상 채널']], cmp: 'Dual-Chirp에서는 FFT IP(외부)가 맡습니다.', cmpLink: ['../logic/index.html#fft', 'Dual-Chirp FFT IP 보기 →'], rel: ['dfft'] },
+    dfft: { tag: '신호 처리', cls: '', ref: '처리 단계 2 / 7', title: 'Interlaced Doppler DFT', desc: '송신기마다 따로 Doppler DFT를 하고 0을 채워 넣어(interlaced) 스펙트럼을 만듭니다. M개 송신기면 참 스펙트럼의 반복 사본이 생기고, 표적이 범위를 넘으면 그 반복 번호 ξ가 TX 간 위상 차로 나타납니다.',
+      kv: [['TX별 chirp', '128'], ['반복 사본', 'M = 2']], cmp: 'Dual-Chirp는 레인(chirp 길이)마다 Doppler FFT를 하고, 두 레인의 주기가 4:5라는 점을 씁니다.', rel: ['rfft', 'cfar', 'xi'] },
+    cfar: { tag: '신호 처리', cls: '', ref: '처리 단계 3 / 7', title: 'OS-CFAR + peak search', desc: '순서 통계 CFAR로 검출하고 피크를 찾습니다.', kv: [['검출기', 'OS-CFAR']], cmp: 'Dual-Chirp 회로의 PKD는 단일 표적을 가정하고 맵 최댓값을 씁니다.', cmpLink: ['../logic/index.html#pkd', 'Dual-Chirp PKD 보기 →'], rel: ['phase'] },
+    phase: { tag: '신호 처리', cls: '', ref: '처리 단계 4 / 7', title: 'Phase trend across virtual elements', desc: '고른 피크에서 가상 소자들의 위상을 꺼내 각도에 따른 선형 위상 추세를 봅니다. TX0 소자와 TX1 소자 사이에 추세에서 벗어난 위상 점프가 있으면 그것이 Doppler 접힘의 흔적입니다.',
+      kv: [['1칸 접힘 위상 점프', 'π (M = 2)'], ['측정 예', '−π → ξ = −1']], cmp: 'Dual-Chirp에는 공간 위상을 쓰는 단계가 없습니다. 대신 두 레인의 접힌 속도를 후보로 펼칩니다.', cmpLink: ['../logic/index.html#cand', 'Dual-Chirp CAND 보기 →'], rel: ['xi', 'tx'] },
+    xi: { tag: '신호 처리', cls: '', ref: '처리 단계 5 / 7', title: 'ξ estimation', desc: 'TX m의 스펙트럼이 TX 0에 비해 e^{j2πξm/M}만큼 위상이 어긋나 있으므로 그 위상으로 접힘 횟수 ξ를 정합니다.',
+      kv: [['가설 수', 'M = 2'], ['정할 수 있는 범위', '±λ/(4Tr)']], cmp: 'Dual-Chirp의 MATCH는 후보 15쌍 중 가장 가까운 쌍을 고릅니다. 틀린 쌍은 최소 9.74 m/s 떨어져 있어 불일치 크기로 결과를 검증할 수 있습니다.', cmpLink: ['../logic/index.html#match', 'Dual-Chirp MATCH 보기 →'], rel: ['phase', 'corr', 'chk'] },
+    corr: { tag: '신호 처리', cls: '', ref: '처리 단계 6 / 7', title: 'Doppler · phase correction', desc: 'ξ로 속도를 펼치고 TX1 소자의 위상 오차를 빼서 위상이 맞는 DFT를 다시 합니다.',
+      kv: [['출력', '보정된 v, 정렬된 가상 배열']], cmp: 'Dual-Chirp의 RC는 복원한 속도로 거리-Doppler 결합을 빼서 거리를 보정합니다.', cmpLink: ['../logic/index.html#rc', 'Dual-Chirp RC 보기 →'], rel: ['xi', 'doa'] },
+    doa: { tag: '신호 처리', cls: '', ref: '처리 단계 7 / 7', title: 'DOA estimation', desc: '보정된 가상 배열로 각도를 추정합니다. 논문은 보정 결과가 SIMO 기준과 일치하고 피크가 더 좁다고 보고합니다.',
+      kv: [['배열', '20 가상 소자']], cmp: 'Dual-Chirp 블록도에는 각도 처리가 없습니다. 각도가 필요하면 RX 배열과 별도 처리를 더해야 합니다.', rel: ['corr'] },
+    chk: { tag: '논문에 없음', cls: 'ghost', ref: '비교용 빈 자리', title: 'Validity check', desc: '논문의 처리 체인에는 고른 ξ가 맞는지 확인하는 단계가 없습니다. 위상 추정이 틀리거나 표적이 ±λ/(4Tr)을 넘으면 틀린 속도가 그대로 나갑니다.',
+      kv: [['비교 분석 · 9 dB 경고 없는 오류', '25.5%'], ['Dual-Chirp (거리 일치 검사)', '0.2%']], cmp: 'Dual-Chirp의 FLAG는 후보 불일치, 두 레인 거리 불일치, 유효 쌍 없음, 범위 밖 네 경우를 막습니다.', cmpLink: ['../logic/index.html#flag', 'Dual-Chirp FLAG 보기 →'], rel: ['xi'] },
+    trk: { tag: '외부', cls: 'ext', ref: '출력', title: 'Tracker', desc: '보정된 속도, 거리, 각도가 추적기로 갑니다.', kv: [['출력', 'v, R, θ']], cmp: 'Dual-Chirp는 v, R과 함께 플래그 원인 비트를 넘깁니다.', cmpLink: ['../logic/index.html#oreg', 'Dual-Chirp OREG 보기 →'], rel: ['corr', 'doa'] }
+  };
+  const NAME = { scene: 'Targets', fe: 'Front end', seq: 'TDM chirp sequence', tx: 'TX0 / TX1', rx: 'RX ×10 + ADC', sp: 'Signal processing', rfft: 'Range FFT', dfft: 'Interlaced Doppler DFT', cfar: 'OS-CFAR', phase: 'Phase trend', xi: 'ξ estimation', corr: 'Doppler · phase corr.', doa: 'DOA', chk: 'Validity check', trk: 'Tracker' };
+  const panel = document.getElementById('panel');
+  function show(id) {
+    const d = I[id]; if (!d) return;
+    svg.querySelectorAll('.blk').forEach(g => g.classList.toggle('on', g.getAttribute('data-id') === id));
+    let h = `<div class="tags"><span class="tag ${d.cls}">${esc(d.tag)}</span><span class="ref">${esc(d.ref)}</span></div><div class="ptitle">${esc(d.title)}</div><p>${esc(d.desc)}</p>`;
+    if (d.problem) h += `<h3>논문이 푸는 문제</h3><ul class="b">${d.problem.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    h += `<h3>핵심 수치</h3><table class="kv"><tbody>${d.kv.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td></tr>`).join('')}</tbody></table>`;
+    h += `<div class="cmp"><span class="h">Dual-Chirp와 비교</span><span>${esc(d.cmp)}</span>${d.cmpLink ? `<a href="${d.cmpLink[0]}">${esc(d.cmpLink[1])}</a>` : ''}</div>`;
+    h += `<h3>연결된 파트</h3><div class="rel">${d.rel.map(r => `<button type="button" data-r="${r}">${esc(NAME[r])}</button>`).join('')}</div>`;
+    panel.innerHTML = h;
+    panel.querySelectorAll('.rel button').forEach(b => b.addEventListener('click', () => show(b.dataset.r)));
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+  }
+  svg.querySelectorAll('.blk').forEach(g => {
+    const id = g.getAttribute('data-id');
+    g.addEventListener('click', () => show(id));
+    g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(id); } });
+  });
+  const T = [
+    ['TDM chirp sequence', ['seq', 'SEQ'], 'Roos는 chirp마다 TX를 바꾸고, Dual-Chirp는 블록마다 chirp 길이를 바꿉니다. 둘 다 결국 chirp 반복 시간이 모호성 범위를 정합니다.'],
+    ['TX0 / TX1 · RX ×10 · ADC', null, 'Roos는 TX 2개와 RX 배열이 필수입니다. Dual-Chirp는 TX 1개, RX 1개부터 동작하며 프런트엔드는 논리 회로 밖입니다.'],
+    ['Range FFT · Interlaced Doppler DFT', ['fft', 'FFT IP (외부)'], 'Roos는 TX별 맵, Dual-Chirp는 레인별 맵을 만듭니다. 이 회로도에서는 둘 다 외부 IP로 둡니다.'],
+    ['OS-CFAR + peak search', ['pkd', 'PKD'], 'Roos는 OS-CFAR, Dual-Chirp 회로는 맵 최댓값입니다. 다중 표적을 다루려면 Dual-Chirp에도 CFAR와 연관 규칙이 필요합니다.'],
+    ['논문에 명시 없음', ['nbr', 'NBR · GRK'], 'Dual-Chirp는 Grandke 보간으로 bin 이하 위치를 구합니다. Roos 논문의 처리 체인에는 보간 단계가 따로 적혀 있지 않습니다.'],
+    ['Phase trend · ξ estimation', ['match', 'CAND · MATCH'], '둘 다 접힘 횟수를 정합니다. Roos는 TX 간 위상 차 하나로 가설 M개 중 고르고, Dual-Chirp는 두 주기의 후보 15쌍 중 가장 가까운 쌍을 고릅니다.'],
+    ['Doppler · phase correction', ['rc', 'RC'], 'Roos의 보정은 각도 위상을 바로잡는 데, Dual-Chirp의 보정은 거리-Doppler 결합을 빼는 데 씁니다.'],
+    ['DOA estimation', null, 'Dual-Chirp 블록도에는 각도 처리가 없습니다.'],
+    ['없음', ['flag', 'FLAG'], 'Roos에는 결과를 검증하는 단계가 없습니다. Dual-Chirp는 후보 불일치, 레인 간 거리 불일치, 유효 쌍 없음, 범위 밖을 플래그합니다.']
+  ];
+  document.querySelector('#maptab tbody').innerHTML = T.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1] ? `<a href="../logic/index.html#${r[1][0]}">${esc(r[1][1])}</a>` : '없음'}</td><td>${esc(r[2])}</td></tr>`).join('');
+  const start = (location.hash || '').replace('#', '');
+  show(I[start] ? start : 'sys');
+  // make the whole drawing title select the system overview
+  svg.addEventListener('dblclick', () => show('sys'));
+})();
+</script>
+</body>
+</html>

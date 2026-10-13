@@ -1,0 +1,858 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Dual-Chirp Radar 결정 경로의 논리 회로도와 Verilog 구현, Icarus Verilog RTL 시뮬레이션, 무작위 검증, Yosys 합성 결과.">
+<title>Dual-Chirp Radar 논리 회로도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: hierarchical schematic. The top sheet spans the page; the selected block's sub-sheet,
+   equations and signal list sit below it in two columns; the Verilog application follows. */
+:root {
+  --bg: #f3f4f1; --sheet: #fbfbf9; --ext: #ffffff; --note: #e8eae5;
+  --ink: #1d2430; --ink2: #4a5361; --muted: #6b7380; --rule: #c9cec9; --grid: #e3e6e1;
+  --state: #2f6f5e; --state-tint: #e0eee9;
+  --comb: #2856b8; --comb-tint: #e3eaf8;
+  --focus: #c22d5a; --focus-tint: #fbe3ea;
+  --wave: #2856b8; --wave2: #2f6f5e;
+  --sans: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Archivo", sans-serif;
+  --ui: "Archivo", "Noto Sans KR", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181d; --sheet: #1a1f26; --ext: #20262e; --note: #222a33;
+    --ink: #e5e8ec; --ink2: #b7bec8; --muted: #8d96a1; --rule: #39414b; --grid: #232a32;
+    --state: #6fc0a6; --state-tint: #1b3330; --comb: #7fa2ec; --comb-tint: #1f2c45;
+    --focus: #f07399; --focus-tint: #3d1f2a; --wave: #7fa2ec; --wave2: #6fc0a6; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14181d; --sheet: #1a1f26; --ext: #20262e; --note: #222a33;
+  --ink: #e5e8ec; --ink2: #b7bec8; --muted: #8d96a1; --rule: #39414b; --grid: #232a32;
+  --state: #6fc0a6; --state-tint: #1b3330; --comb: #7fa2ec; --comb-tint: #1f2c45;
+  --focus: #f07399; --focus-tint: #3d1f2a; --wave: #7fa2ec; --wave2: #6fc0a6; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.7; word-break: keep-all; overflow-wrap: anywhere; }
+sub, sup { line-height: 0; font-size: .72em; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; display: grid; gap: 22px; }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } }
+.eyebrow { font-family: var(--mono); font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+h1 { margin: 0; font-family: var(--ui); font-size: clamp(24px, 3vw, 30px); font-weight: 700; letter-spacing: -.01em; }
+h2 { margin: 0; font-family: var(--ui); font-size: 21px; font-weight: 700; text-wrap: balance; }
+h3 { margin: 0; font-size: 13px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
+p { margin: 0; }
+.lede { max-width: 72ch; color: var(--ink2); }
+.links { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; }
+a { color: var(--comb); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.callout { background: var(--note); border-radius: 4px; padding: 12px 16px; font-size: 14px; color: var(--ink2); max-width: 820px; }
+.callout b { color: var(--ink); }
+.sheet { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+.sheet svg { display: block; width: 100%; min-width: 960px; height: auto; }
+.sub svg { min-width: 560px; }
+svg text { font-family: var(--mono); fill: var(--ink); }
+svg .t-ttl { font-family: var(--ui); font-size: 12.5px; font-weight: 600; }
+svg .t-sub { font-size: 10.5px; fill: var(--ink2); }
+svg .t-lbl { font-size: 10px; fill: var(--muted); }
+svg .t-op { font-size: 12px; font-weight: 500; }
+svg .w { fill: none; stroke: var(--ink2); stroke-width: 1.3; }
+svg .bus { fill: none; stroke: var(--ink); stroke-width: 2.4; }
+svg .ctl { fill: none; stroke: var(--muted); stroke-width: 1.1; stroke-dasharray: 4 3; }
+svg .ah { fill: var(--ink2); }
+svg .dot { fill: var(--ink); }
+svg .blk rect.b { stroke-width: 1.3; }
+svg .blk.state rect.b { fill: var(--state-tint); stroke: var(--state); }
+svg .blk.comb rect.b { fill: var(--comb-tint); stroke: var(--comb); }
+svg .blk.ext rect.b { fill: var(--ext); stroke: var(--ink2); }
+svg .blk { cursor: pointer; }
+svg .blk:hover rect.b, svg .blk:focus rect.b { stroke-width: 2.4; }
+svg .blk:focus { outline: none; }
+svg .blk.on rect.b { fill: var(--comb); stroke: var(--comb); }
+svg .blk.state.on rect.b { fill: var(--state); stroke: var(--state); }
+svg .blk.ext.on rect.b { fill: var(--ink2); stroke: var(--ink2); }
+svg .blk.on text { fill: var(--sheet); }
+svg .clk { fill: none; stroke: var(--state); stroke-width: 1.1; }
+svg .blk.on .clk { stroke: var(--sheet); }
+svg .port { fill: var(--sheet); stroke: var(--ink2); stroke-width: 1; }
+svg .op { fill: var(--sheet); stroke: var(--comb); stroke-width: 1.2; }
+svg .rg { fill: var(--state-tint); stroke: var(--state); stroke-width: 1.2; }
+svg .mem { fill: var(--state-tint); stroke: var(--state); stroke-width: 1.2; stroke-dasharray: 3 2; }
+svg .gate { fill: var(--sheet); stroke: var(--comb); stroke-width: 1.3; }
+svg .fsm { fill: var(--state-tint); stroke: var(--state); stroke-width: 1.3; }
+svg .fsm-on { fill: var(--state); stroke: var(--state); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink2); align-items: center; }
+.legend span { display: inline-flex; gap: 6px; align-items: center; white-space: nowrap; }
+.sw { width: 13px; height: 13px; border: 1.5px solid; border-radius: 2px; display: inline-block; }
+.sw.s { border-color: var(--state); background: var(--state-tint); } .sw.c { border-color: var(--comb); background: var(--comb-tint); } .sw.e { border-color: var(--ink2); background: var(--ext); }
+.ln { width: 20px; height: 0; display: inline-block; border-top: 2.5px solid var(--ink); }
+.ln.c { border-top: 1.5px dashed var(--muted); }
+.detail { display: grid; gap: 14px; border-top: 1px solid var(--rule); padding-top: 18px; scroll-margin-top: 12px; }
+.dhead { display: grid; gap: 6px; }
+.tags { display: flex; gap: 10px; align-items: center; font-size: 12px; }
+.tag { font-size: 12px; padding: 1px 8px; border-radius: 3px; background: var(--comb-tint); color: var(--comb); font-weight: 500; }
+.tag.state { background: var(--state-tint); color: var(--state); }
+.tag.ext { background: var(--note); color: var(--ink2); }
+.ref { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.dtitle { font-size: 21px; font-weight: 700; font-family: var(--ui); }
+.dtitle .mono { font-family: var(--mono); font-weight: 500; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+@media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+.col { display: grid; gap: 10px; min-width: 0; }
+.panel { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+pre.eq { margin: 0; padding: 12px 14px; font-family: var(--mono); font-size: 13px; line-height: 1.85; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; white-space: pre; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+thead th { font-size: 12px; font-weight: 500; color: var(--muted); border-bottom: 1.5px solid var(--ink2); }
+td.m, th.m { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.n { font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tw { overflow-x: auto; }
+.note { background: var(--note); border-radius: 4px; padding: 12px 14px; font-size: 13.5px; color: var(--ink2); display: grid; gap: 6px; }
+.note b { color: var(--ink); font-weight: 500; }
+.rel { display: flex; flex-wrap: wrap; gap: 6px; }
+.rel button { font: 13px var(--ui); background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 3px; padding: 3px 10px; cursor: pointer; }
+.rel button:hover { border-color: var(--ink); }
+section.app { display: grid; gap: 14px; border-top: 1px solid var(--rule); padding-top: 22px; }
+.app p { max-width: 74ch; }
+.narrow { max-width: 820px; }
+.wave { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; }
+.wave svg { display: block; min-width: 1100px; width: 100%; height: auto; }
+.wave text { font-family: var(--mono); fill: var(--ink); }
+ol.fix { margin: 0; padding-left: 22px; display: grid; gap: 8px; max-width: 820px; }
+ol.fix b, ul.plain b { font-weight: 600; }
+ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 820px; }
+code { font-family: var(--mono); font-size: 13px; }
+pre.cmd { margin: 0; padding: 12px 14px; font: 12.5px/1.7 var(--mono); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; overflow-x: auto; max-width: 820px; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 14px; max-width: 820px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:8px">
+    <div class="eyebrow">Dual-Chirp Radar · logic / block-level schematic</div>
+    <h1>Dual-Chirp Radar 논리 회로도</h1>
+    <p class="lede">FFT를 지난 두 레인의 거리-Doppler 맵이 들어와 속도와 거리가 정해지고 추적기로 나가기까지의 결정 경로를 레지스터, 비교기, 게이트로 옮긴 회로입니다. 위쪽 시트에서 블록을 누르면 그 블록의 내부 회로와 논리식, 신호가 아래에 나옵니다. 그 아래에 이 회로를 Verilog로 구현해 돌린 결과가 있습니다.</p>
+    <div class="links"><a href="../index.html">← 비교 분석 메인</a><a href="../roos/index.html">비교 선행연구: Roos 2018 블록도</a><a href="../v1/index.html">원 시스템 블록도 (v1)</a></div>
+  </header>
+  <div class="callout"><b>개념 설계입니다.</b> 원 논문은 이 회로를 구현하거나 측정하지 않았고, 논문의 결과는 모두 소프트웨어 시뮬레이터에서 나왔습니다. 이 회로도는 논문의 식 (2)–(7)과 비교 분석에서 제안한 거리 일치 검사를 하드웨어로 만든다면 어떤 구조가 되는지를 보여줍니다. 논문에 없는 선택은 블록마다 "설계 가정"에 적었습니다. <b>아래 시뮬레이션 결과는 Icarus Verilog 12로 RTL을 직접 돌린 것입니다.</b> 같은 입력을 넣은 Python 참조 모델과 로그를 줄 단위로 비교해 2,005프레임(S1–S5, 기본 1,000, 스트레스 1,000) 모두 차이가 없었습니다. 자원과 논리 깊이는 Yosys 합성 결과이고, 배치·배선과 최대 주파수는 아직 다루지 않았습니다.</div>
+
+  <h3>최상위 시트</h3>
+  <div class="sheet"><svg id="top" viewBox="0 0 1240 540" role="img" aria-label="최상위 회로도: SEQ, FFT IP, PKD, NBR, GRK, FV, LREG, CAND, MATCH, RC, FLAG, OREG, CTRL"></svg></div>
+  <div class="legend">
+    <span><i class="sw s"></i>상태를 가진 블록 (레지스터, 메모리)</span>
+    <span><i class="sw c"></i>조합 논리</span>
+    <span><i class="sw e"></i>외부 IP</span>
+    <span><i class="ln"></i>굵은 선: 버스</span>
+    <span><i class="ln c"></i>점선: 제어</span>
+    <span>◺ 클록 입력</span>
+    <span>논리식 표기 · AND, + OR, ¬ NOT, ⊕ XOR</span>
+  </div>
+
+  <section class="detail" id="detail" aria-live="polite"></section>
+
+  <section class="app" id="app">
+    <h2>적용: Verilog 구현과 시뮬레이션</h2>
+    <p>위 회로도를 Verilog로 구현했습니다. 결정 경로 전체(PKD, NBR, GRK, FV, LREG, CAND, MATCH, RC, FLAG, OREG, CTRL)가 <code>dc_top</code> 아래 네 모듈에 들어 있습니다. 한 레인의 맵은 한 클록에 한 셀씩 32,768사이클 동안 흘러 들어오고, 두 레인을 마친 뒤 한 사이클 안에 속도와 거리가 정해집니다. 시뮬레이션은 Icarus Verilog 12(이 환경에서 소스로 빌드)로 돌렸고, 같은 레지스터·고정소수점·나눗셈 순서를 따르는 Python 참조 모델의 로그와 줄 단위로 비교했습니다. 결과: <b>2,005프레임, diff 0줄.</b></p>
+
+    <h3>구현한 파일</h3>
+    <div class="tw narrow"><table id="files"><thead><tr><th>파일</th><th>줄 수</th><th>내용</th></tr></thead><tbody></tbody></table></div>
+
+    <h3>동작 시나리오 (RTL 시뮬레이션 파형)</h3>
+    <p>S1(반대 차선 차량, R 62.3 m, v −58.6 m/s, 맵 SNR 25 dB)에서 레인 2의 마지막 샘플이 들어온 뒤부터 결과가 나오기까지 24사이클입니다. 레인 1은 같은 과정을 먼저 지났습니다(v̂₁ = −9.92 m/s, 접힌 값). 파형은 <code>tb_dc.v</code>를 <code>-DDUMP</code>로 돌려 얻은 VCD에서 <code>vcd_window.py</code>로 하강 에지마다 뽑은 실제 RTL 신호입니다. 사이클 번호는 테스트벤치의 클록 카운터(리셋 포함)입니다.</p>
+    <div class="wave"><svg id="wave" viewBox="0 0 1180 520" role="img" aria-label="S1 시나리오 레인 2 결정 구간의 사이클별 파형"></svg></div>
+    <div class="tw"><table id="wtab"><thead><tr><th>사이클</th><th>상태</th><th>i</th><th>q</th><th>무슨 일이 일어났나</th></tr></thead><tbody></tbody></table></div>
+
+    <h3>시나리오별 결과</h3>
+    <p>비교 분석 페이지의 시나리오 S1–S5를 같은 회로에 넣은 결과입니다. 피크 위치는 (n, m), m은 FFT 순서이고 64 이상이 음의 Doppler bin입니다.</p>
+    <div class="tw"><table id="stab"><thead><tr><th>ID</th><th>입력</th><th>레인 1 피크 · v̂₁</th><th>레인 2 피크 · v̂₂</th><th>dmin</th><th>v̂</th><th>R̂</th><th>플래그</th><th>판정</th></tr></thead><tbody></tbody></table></div>
+
+    <h3>무작위 검증</h3>
+    <p>프레임 1,000개씩 두 설정을 RTL로 돌리고 모든 결정을 검사기로 대조했습니다. 검사기는 RTL 구조와 상관없이 맵에서 직접 최댓값과 이웃을 찾고, Grandke 보간, 접힌 속도, 후보, 최근접 쌍, 속도, 거리, 플래그를 부동소수점으로 다시 계산합니다. 고정소수점 반올림 차이는 허용 오차로, 임계값 2 LSB 안에서 갈리는 결정은 '경계'로 따로 셉니다.</p>
+    <div class="tw narrow"><table id="vtab"><thead><tr><th>항목</th><th class="m">기본 설정</th><th class="m">스트레스 설정</th></tr></thead><tbody></tbody></table></div>
+    <p class="narrow" id="vnote"></p>
+
+    <h3>처리 시간과 자원 (Yosys 0.60 합성, 배치·배선 전)</h3>
+    <div class="tw narrow"><table id="rtab"><thead><tr><th>항목</th><th class="m">값</th><th>근거</th></tr></thead><tbody></tbody></table></div>
+    <p class="narrow"><b>합성에서 새로 보인 것:</b> COMB(CAND → MATCH → RC → FLAG)가 LUT의 3분의 2를 쓰고, 조합 경로도 4-LUT 기준 123단으로 가장 깁니다. PKD는 6단, GRK는 20단입니다. LUT 한 단에 배선 지연까지 더하면 이 경로만으로 10 ns(100 MHz)를 넘을 가능성이 커서, 위의 100 MHz는 아직 가정일 뿐입니다. 고칠 방향은 COMB를 순차화하는 것입니다. 후보 15쌍을 사이클마다 하나씩 비교하면 프레임당 사이클은 0.02% 늘고, 뺄셈기 15개가 1개로 줄어듭니다. 이 수정과 배치·배선(nextpnr)은 다음 단계로 남겨 두었습니다.</p>
+
+    <h3>구현하면서 회로도를 고친 곳</h3>
+    <ol class="fix" id="fix"></ol>
+    <h3>설계하면서 고른 것</h3>
+    <ol class="fix" id="choose"></ol>
+
+    <h3>이 구현이 다루지 않는 것</h3>
+    <ul class="plain">
+      <li>RF 프런트엔드, ADC, 2D-FFT와 크기 계산은 외부 IP로 두었습니다. 테스트 자극은 부동소수점 레이더 시뮬레이터의 맵을 16비트로 양자화해서 만듭니다.</li>
+      <li>CFAR 대신 맵 최댓값을 표적으로 잡습니다. 원 논문의 위치 검출 정의와 같지만, 표적이 여럿이면 레인마다 피크 여러 개와 연관 규칙이 필요합니다(비교 분석 S4 참고).</li>
+      <li>범위 이동(range migration), 클러터, 다중경로는 원 논문과 같이 넣지 않았습니다.</li>
+      <li><b>배치·배선과 타이밍 분석은 하지 않았습니다.</b> Yosys 합성으로 자원과 논리 깊이까지만 봤고, 최대 주파수는 모릅니다. 처리 시간의 100 MHz는 계산을 위한 가정입니다.</li>
+    </ul>
+
+    <h3>직접 돌려 보기 (Icarus Verilog 12, Python 3 + NumPy)</h3>
+    <pre class="cmd">cd rtl
+python3 gen_stim.py 5 0 scenario --hex          # S1–S5, 또는: gen_stim.py 1000 101 base --hex
+iverilog -g2005 -o tb.vvp -Ptb.NF=5 tb_dc.v dc_top.v dc_pkd.v dc_div.v dc_comb.v
+vvp -n tb.vvp > run.log
+python3 check.py run.log                          # exit 0, "errors": {} 이면 통과
+python3 run_model.py OUT=model.log && diff &lt;(grep -v END run.log) &lt;(grep -v END model.log)   # RTL = 참조 모델
+iverilog -g2005 -DDUMP -o tbd.vvp -Ptb.NF=1 tb_dc.v dc_top.v dc_pkd.v dc_div.v dc_comb.v
+vvp -n tbd.vvp > /dev/null && python3 vcd_window.py dc_wave.vcd > wave.json   # 위 파형
+yosys -q -s synth.ys                              # iCE40 자원 → synth_stat.txt
+yosys -q -s depth.ys                              # 가장 긴 조합 경로 → synth_depth.txt</pre>
+
+    <h3>비트 폭 근거 (논문 파라미터에서 계산)</h3>
+    <div class="tw narrow"><table id="btab"><thead><tr><th>신호</th><th>폭</th><th>근거</th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <footer>회로도의 논리식은 Verilog 구현, 참조 모델과 같습니다. 고정소수점 상수는 f<sub>0</sub> = 77 GHz, B = 300 MHz, N<sub>s</sub> = 256, N<sub>c</sub> = 128, T<sub>c1</sub>/T<sub>c2</sub> = 40/50 µs, V<sub>c</sub> = 71 m/s에서 계산했습니다. 전력과 실제 동작 주파수는 다루지 않았습니다.</footer>
+</div>
+
+<script>
+const DATA = {"files": [["dc_top.v", 138, "최상위. CTRL 상태 기계, FV, LREG, OREG와 하위 모듈 연결"], ["dc_pkd.v", 67, "PKD + NBR. 스트림 최댓값과 3×3 이웃 캡처, 라인 버퍼"], ["dc_div.v", 47, "GRK. Grandke 보간용 9비트 직렬 나눗셈기"], ["dc_comb.v", 87, "CAND, MATCH, RC, FLAG. 조합 논리"], ["dc_seq.v", 65, "SEQ. chirp 시퀀서와 프레임 타이머"], ["tb_dc.v", 93, "테스트벤치. 맵을 한 클록에 한 셀씩 넣고 레인별 중간값과 결과를 로그로 남김"], ["ref_model.py", 209, "비트 정확 참조 모델. RTL과 같은 레지스터·고정소수점·순서"], ["run_model.py", 26, "참조 모델 실행. 테스트벤치와 같은 형식의 로그"], ["check.py", 145, "검사기. 맵에서 직접 피크를 찾고 논문 식을 부동소수점으로 다시 계산해 대조"], ["gen_stim.py", 92, "자극 생성. 부동소수점 레이더 시뮬레이터의 맵을 16비트로 양자화"], ["radar_sim.py", 208, "부동소수점 레이더 시뮬레이터 (비교 분석에 쓴 것)"], ["vcd_window.py", 63, "VCD 파형에서 결정 구간을 사이클별로 뽑아 JSON으로 저장 (위 파형)"], ["synth.ys", 6, "Yosys 합성 스크립트. iCE40 HX8K 대상 자원 집계"], ["depth.ys", 7, "Yosys 스크립트. 4-LUT 일반 매핑 후 가장 긴 조합 경로"]], "trace": [{"c": 32767, "st": "SCAN", "lane": 0, "note": "last sample", "pk": {"mag": 65535, "n": 123, "m": 102, "dL": 36500, "dR": 31364, "rL": 16730, "rR": 54024, "rok": 1}}, {"c": 32768, "st": "DIVD", "lane": 0, "i": "ld", "q": 0, "rem": 1911040, "den": 102035}, {"c": 32769, "st": "DIVD", "lane": 0, "i": 8, "q": 0, "rem": 1911040, "den": 102035}, {"c": 32770, "st": "DIVD", "lane": 0, "i": 7, "q": 0, "rem": 1911040, "den": 102035}, {"c": 32771, "st": "DIVD", "lane": 0, "i": 6, "q": 0, "rem": 1911040, "den": 102035}, {"c": 32772, "st": "DIVD", "lane": 0, "i": 5, "q": 0, "rem": 1911040, "den": 102035}, {"c": 32773, "st": "DIVD", "lane": 0, "i": 4, "q": 16, "rem": 278480, "den": 102035}, {"c": 32774, "st": "DIVD", "lane": 0, "i": 3, "q": 16, "rem": 278480, "den": 102035}, {"c": 32775, "st": "DIVD", "lane": 0, "i": 2, "q": 16, "rem": 278480, "den": 102035}, {"c": 32776, "st": "DIVD", "lane": 0, "i": 1, "q": 18, "rem": 74410, "den": 102035}, {"c": 32777, "st": "DIVD", "lane": 0, "i": 0, "q": 18, "rem": 74410, "den": 102035}, {"c": 32778, "st": "DIVR", "lane": 0, "i": "ld", "q": 0, "rem": 10883328, "den": 119559}, {"c": 32779, "st": "DIVR", "lane": 0, "i": 8, "q": 0, "rem": 10883328, "den": 119559}, {"c": 32780, "st": "DIVR", "lane": 0, "i": 7, "q": 0, "rem": 10883328, "den": 119559}, {"c": 32781, "st": "DIVR", "lane": 0, "i": 6, "q": 64, "rem": 3231552, "den": 119559}, {"c": 32782, "st": "DIVR", "lane": 0, "i": 5, "q": 64, "rem": 3231552, "den": 119559}, {"c": 32783, "st": "DIVR", "lane": 0, "i": 4, "q": 80, "rem": 1318608, "den": 119559}, {"c": 32784, "st": "DIVR", "lane": 0, "i": 3, "q": 88, "rem": 362136, "den": 119559}, {"c": 32785, "st": "DIVR", "lane": 0, "i": 2, "q": 88, "rem": 362136, "den": 119559}, {"c": 32786, "st": "DIVR", "lane": 0, "i": 1, "q": 90, "rem": 123018, "den": 119559}, {"c": 32787, "st": "DIVR", "lane": 0, "i": 0, "q": 91, "rem": 3459, "den": 119559}, {"c": 32788, "st": "FV", "lane": 0, "dd": -18, "dr": 91, "vfold": -2540, "kr": 31579}, {"c": 65556, "st": "SCAN", "lane": 1, "note": "last sample", "pk": {"mag": 65535, "n": 123, "m": 63, "dL": 13872, "dR": 63658, "rL": 29526, "rR": 38778, "rok": 1}}, {"c": 65557, "st": "DIVD", "lane": 1, "i": "ld", "q": 0, "rem": 15815936, "den": 129193}, {"c": 65558, "st": "DIVD", "lane": 1, "i": 8, "q": 0, "rem": 15815936, "den": 129193}, {"c": 65559, "st": "DIVD", "lane": 1, "i": 7, "q": 0, "rem": 15815936, "den": 129193}, {"c": 65560, "st": "DIVD", "lane": 1, "i": 6, "q": 64, "rem": 7547584, "den": 129193}, {"c": 65561, "st": "DIVD", "lane": 1, "i": 5, "q": 96, "rem": 3413408, "den": 129193}, {"c": 65562, "st": "DIVD", "lane": 1, "i": 4, "q": 112, "rem": 1346320, "den": 129193}, {"c": 65563, "st": "DIVD", "lane": 1, "i": 3, "q": 120, "rem": 312776, "den": 129193}, {"c": 65564, "st": "DIVD", "lane": 1, "i": 2, "q": 120, "rem": 312776, "den": 129193}, {"c": 65565, "st": "DIVD", "lane": 1, "i": 1, "q": 122, "rem": 54390, "den": 129193}, {"c": 65566, "st": "DIVD", "lane": 1, "i": 0, "q": 122, "rem": 54390, "den": 129193}, {"c": 65567, "st": "DIVR", "lane": 1, "i": "ld", "q": 0, "rem": 3077376, "den": 104313}, {"c": 65568, "st": "DIVR", "lane": 1, "i": 8, "q": 0, "rem": 3077376, "den": 104313}, {"c": 65569, "st": "DIVR", "lane": 1, "i": 7, "q": 0, "rem": 3077376, "den": 104313}, {"c": 65570, "st": "DIVR", "lane": 1, "i": 6, "q": 0, "rem": 3077376, "den": 104313}, {"c": 65571, "st": "DIVR", "lane": 1, "i": 5, "q": 0, "rem": 3077376, "den": 104313}, {"c": 65572, "st": "DIVR", "lane": 1, "i": 4, "q": 16, "rem": 1408368, "den": 104313}, {"c": 65573, "st": "DIVR", "lane": 1, "i": 3, "q": 24, "rem": 573864, "den": 104313}, {"c": 65574, "st": "DIVR", "lane": 1, "i": 2, "q": 28, "rem": 156612, "den": 104313}, {"c": 65575, "st": "DIVR", "lane": 1, "i": 1, "q": 28, "rem": 156612, "den": 104313}, {"c": 65576, "st": "DIVR", "lane": 1, "i": 0, "q": 29, "rem": 52299, "den": 104313}, {"c": 65577, "st": "FV", "lane": 1, "dd": 122, "dr": 29, "vfold": 4946, "kr": 31517}, {"c": 65578, "st": "COMB", "out": {"v": -15005, "R": 31895, "flag": 0, "fv": 0, "fr": 0, "fn": 0, "fo": 0, "dmin": 6, "sel": 0, "r1": 31888, "r2": 31903, "c1": [-15008, -2540, 9928], "c2": [-15002, -5028, 4946, 14920, 24894], "ok1": [true, true, true], "ok2": [true, true, true, true, false]}}, {"c": 65579, "st": "IDLE", "out_vld": 1}], "scen": [{"id": "S1", "truth": [62.3, -58.6, 10.0, 25.0], "lanes": [{"n": 123, "m": 102, "Mp": 65535, "dL": 36500, "dR": 31364, "rL": 16730, "rR": 54024, "rok": 1, "dd": -18, "dr": 91, "kd": -6674, "vfold": -2540, "kr": 31579}, {"n": 123, "m": 63, "Mp": 65535, "dL": 13872, "dR": 63658, "rL": 29526, "rR": 38778, "rok": 1, "dd": 122, "dr": 29, "kd": 16250, "vfold": 4946, "kr": 31517}], "out": {"v": -15005, "R": 31895, "flag": 0, "fv": 0, "fr": 0, "fn": 0, "fo": 0, "dmin": 6, "sel": 0}}, {"id": "S2", "truth": [88.0, 41.2, 25.0, 9.0], "lanes": [{"n": 177, "m": 108, "Mp": 65535, "dL": 39247, "dR": 49332, "rL": 43777, "rR": 45367, "rok": 1, "dd": 73, "dr": 58, "kd": -5047, "vfold": -1921, "kr": 45370}, {"n": 1, "m": 67, "Mp": 65535, "dL": 46389, "dR": 47530, "rL": 54580, "rR": 51364, "rok": 1, "dd": 66, "dr": -92, "kd": -15550, "vfold": -4734, "kr": 164}], "out": {"v": -14549, "R": 23103, "flag": 1, "fv": 0, "fr": 1, "fn": 0, "fo": 0, "dmin": 319, "sel": 1}}, {"id": "S3a", "truth": [50.0, 88.0, 0.0, 25.0], "lanes": [{"n": 102, "m": 103, "Mp": 65535, "dL": 20978, "dR": 49375, "rL": 43238, "rR": 24053, "rok": 1, "dd": 73, "dr": -49, "kd": -6327, "vfold": -2408, "kr": 26063}, {"n": 102, "m": 33, "Mp": 65535, "dL": 27244, "dR": 40671, "rL": 21042, "rR": 50014, "rok": 1, "dd": 38, "dr": 76, "kd": 8486, "vfold": 2582, "kr": 26188}], "out": {"v": -16121, "R": 26498, "flag": 1, "fv": 1, "fr": 0, "fn": 0, "fo": 0, "dmin": 2490, "sel": 0}}, {"id": "S3b", "truth": [50.0, 105.0, 0.0, 25.0], "lanes": [{"n": 102, "m": 20, "Mp": 65535, "dL": 34697, "dR": 32410, "rL": 29878, "rR": 40627, "rok": 1, "dd": -9, "dr": 37, "kd": 5111, "vfold": 1944, "kr": 26149}, {"n": 103, "m": 89, "Mp": 65535, "dL": 36188, "dR": 33484, "rL": 50634, "rR": 20273, "rok": 1, "dd": -17, "dr": -78, "kd": -10001, "vfold": -3045, "kr": 26290}], "out": {"v": 15657, "R": 25858, "flag": 1, "fv": 1, "fr": 0, "fn": 0, "fo": 0, "dmin": 2491, "sel": 14}}, {"id": "S5", "truth": [35.0, -12.4, -20.0, 25.0], "lanes": [{"n": 70, "m": 95, "Mp": 65535, "dL": 16327, "dR": 56721, "rL": 45355, "rR": 21426, "rok": 1, "dd": 100, "dr": -58, "kd": -8348, "vfold": -3177, "kr": 17862}, {"n": 70, "m": 87, "Mp": 65535, "dL": 22167, "dR": 46388, "rL": 55741, "rR": 19734, "rok": 1, "dd": 62, "dr": -96, "kd": -10434, "vfold": -3176, "kr": 17824}], "out": {"v": -3177, "R": 17917, "flag": 0, "fv": 0, "fr": 0, "fn": 0, "fo": 0, "dmin": 1, "sel": 7}}], "scenOut": [{"v": -15005, "R": 31895, "flag": 0, "fv": 0, "fr": 0, "fn": 0, "fo": 0, "dmin": 6, "sel": 0, "r1": 31888, "r2": 31903, "c1": [-15008, -2540, 9928], "c2": [-15002, -5028, 4946, 14920, 24894], "ok1": [1, 1, 1], "ok2": [1, 1, 1, 1, 0]}], "scenLanes": [[{"lane": 0, "n": 123, "m": 102, "Mp": 65535, "dL": 36500, "dR": 31364, "rL": 16730, "rR": 54024, "rok": 1, "dd": -18, "dr": 91, "kd": -6674, "vfold": -2540, "kr": 31579}, {"lane": 1, "n": 123, "m": 63, "Mp": 65535, "dL": 13872, "dR": 63658, "rL": 29526, "rR": 38778, "rok": 1, "dd": 122, "dr": 29, "kd": 16250, "vfold": 4946, "kr": 31517}]], "ver": {"base": {"frames": 1000, "flag": 157, "fv": 92, "fr": 157, "fn": 0, "fo": 0, "borderline": 0, "ok_truth": 843, "wrong_truth": 0, "max_dv_fixed_vs_float": 0.0066, "max_dR_fixed_vs_float": 0.0034, "max_dd_lsb": 1.0, "errors": {}, "cycles": 65582003, "secs": 410, "diff": 0}, "stress": {"frames": 1000, "flag": 464, "fv": 366, "fr": 241, "fn": 0, "fo": 5, "borderline": 13, "ok_truth": 536, "wrong_truth": 0, "max_dv_fixed_vs_float": 0.0072, "max_dR_fixed_vs_float": 0.0033, "max_dd_lsb": 1.0, "errors": {}, "cycles": 65582003, "secs": 401, "diff": 0}, "fault_no_wrap": {"frames": 1000, "flag": 464, "fv": 366, "fr": 241, "fn": 0, "fo": 5, "borderline": 13, "ok_truth": 536, "wrong_truth": 0, "max_dv_fixed_vs_float": 0.1238, "max_dR_fixed_vs_float": 0.0033, "max_dd_lsb": 132.877, "errors": {"neighbours": 82, "grandke": 53, "folded_velocity": 50, "velocity": 29}}, "fault_no_gate": {"frames": 1000, "flag": 373, "fv": 366, "fr": 0, "fn": 0, "fo": 9, "borderline": 15, "ok_truth": 545, "wrong_truth": 82, "max_dv_fixed_vs_float": 0.0072, "max_dR_fixed_vs_float": 63.8373, "max_dd_lsb": 1.0, "errors": {"range": 785, "flag_fr": 238, "flag_fo": 3}}, "fault_no_fo": {"frames": 1000, "flag": 459, "fv": 366, "fr": 241, "fn": 0, "fo": 0, "borderline": 14, "ok_truth": 537, "wrong_truth": 4, "max_dv_fixed_vs_float": 0.0072, "max_dR_fixed_vs_float": 0.0033, "max_dd_lsb": 1.0, "errors": {"flag_fo": 4}}}, "wave": [{"s_last": 1, "state": "SCAN", "cnt": 0, "i": 0, "q": 91, "busy": 0, "dd": -18, "dr": 91, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65561}, {"s_last": 0, "state": "DIVD", "cnt": 0, "i": 0, "q": 91, "busy": 0, "dd": -18, "dr": 91, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65562}, {"s_last": 0, "state": "DIVD", "cnt": 1, "i": 8, "q": 0, "busy": 1, "dd": -18, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65563}, {"s_last": 0, "state": "DIVD", "cnt": 2, "i": 7, "q": 0, "busy": 1, "dd": -18, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65564}, {"s_last": 0, "state": "DIVD", "cnt": 3, "i": 6, "q": 0, "busy": 1, "dd": -18, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65565}, {"s_last": 0, "state": "DIVD", "cnt": 4, "i": 5, "q": 64, "busy": 1, "dd": -18, "dr": 64, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65566}, {"s_last": 0, "state": "DIVD", "cnt": 5, "i": 4, "q": 96, "busy": 1, "dd": -18, "dr": 96, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65567}, {"s_last": 0, "state": "DIVD", "cnt": 6, "i": 3, "q": 112, "busy": 1, "dd": -18, "dr": 112, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65568}, {"s_last": 0, "state": "DIVD", "cnt": 7, "i": 2, "q": 120, "busy": 1, "dd": -18, "dr": 120, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65569}, {"s_last": 0, "state": "DIVD", "cnt": 8, "i": 1, "q": 120, "busy": 1, "dd": -18, "dr": 120, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65570}, {"s_last": 0, "state": "DIVD", "cnt": 9, "i": 0, "q": 122, "busy": 1, "dd": -18, "dr": 122, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65571}, {"s_last": 0, "state": "DIVR", "cnt": 0, "i": 0, "q": 122, "busy": 0, "dd": -18, "dr": 122, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65572}, {"s_last": 0, "state": "DIVR", "cnt": 1, "i": 8, "q": 0, "busy": 1, "dd": 122, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65573}, {"s_last": 0, "state": "DIVR", "cnt": 2, "i": 7, "q": 0, "busy": 1, "dd": 122, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65574}, {"s_last": 0, "state": "DIVR", "cnt": 3, "i": 6, "q": 0, "busy": 1, "dd": 122, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65575}, {"s_last": 0, "state": "DIVR", "cnt": 4, "i": 5, "q": 0, "busy": 1, "dd": 122, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65576}, {"s_last": 0, "state": "DIVR", "cnt": 5, "i": 4, "q": 0, "busy": 1, "dd": 122, "dr": 0, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65577}, {"s_last": 0, "state": "DIVR", "cnt": 6, "i": 3, "q": 16, "busy": 1, "dd": 122, "dr": 16, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65578}, {"s_last": 0, "state": "DIVR", "cnt": 7, "i": 2, "q": 24, "busy": 1, "dd": 122, "dr": 24, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65579}, {"s_last": 0, "state": "DIVR", "cnt": 8, "i": 1, "q": 28, "busy": 1, "dd": 122, "dr": 28, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65580}, {"s_last": 0, "state": "DIVR", "cnt": 9, "i": 0, "q": 28, "busy": 1, "dd": 122, "dr": 28, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65581}, {"s_last": 0, "state": "FV", "cnt": 0, "i": 0, "q": 29, "busy": 0, "dd": 122, "dr": 29, "v2": null, "dmin": null, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65582}, {"s_last": 0, "state": "COMB", "cnt": 0, "i": 0, "q": 29, "busy": 0, "dd": 122, "dr": 29, "v2": 4946, "dmin": 6, "flag": null, "out_v": null, "out_R": null, "out_vld": 0, "cycle": 65583}, {"s_last": 0, "state": "IDLE", "cnt": 0, "i": 0, "q": 29, "busy": 0, "dd": 122, "dr": 29, "v2": 4946, "dmin": 6, "flag": 0, "out_v": -15005, "out_R": 31895, "out_vld": 1, "cycle": 65584}], "synth": {"tool": "Yosys 0.60 synth_ice40 (iCE40 HX8K target, no place&route)", "total": {"lut4": 2627, "carry": 1223, "ff": 364, "bram": 1, "lut_cap": 7680, "bram_cap": 32}, "modules": [["dc_comb (COMB)", 1852, 1149, 0, 0], ["dc_top (FV, CTRL, regs)", 486, 41, 149, 0], ["dc_div (GRK divider)", 297, 101, 58, 0], ["dc_pkd (PKD+NBR)", 146, 27, 157, 1]], "depth": {"dc_pkd": 6, "dc_div": 20, "dc_comb": 126, "dc_top": 123, "note": "generic 4-LUT levels (synth; abc -lut 4), carry chains counted as LUT levels"}}};
+(function () {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------------- drawing kit ---------------- */
+  function Kit(svg) {
+    function el(n, a, p, t) { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; (p || svg).appendChild(e); return e; }
+    function arrow(a, b, cls) {
+      const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), L = 7, W = 3.5;
+      const p1 = [b[0] - L * Math.cos(ang) + W * Math.sin(ang), b[1] - L * Math.sin(ang) - W * Math.cos(ang)];
+      const p2 = [b[0] - L * Math.cos(ang) - W * Math.sin(ang), b[1] - L * Math.sin(ang) + W * Math.cos(ang)];
+      el('polygon', { points: [b, p1, p2].map(p => p.join(',')).join(' '), class: 'ah' });
+    }
+    const K = {
+      el,
+      w(pts, cls, head) { el('polyline', { points: pts.map(p => p.join(',')).join(' '), class: cls || 'w' }); if (head !== false) arrow(pts[pts.length - 2], pts[pts.length - 1]); },
+      dot(x, y) { el('circle', { cx: x, cy: y, r: 2.6, class: 'dot' }); },
+      t(x, y, s, cls, anchor) { return el('text', { x, y, class: cls || 't-lbl', 'text-anchor': anchor || 'start' }, null, s); },
+      port(x, y, s, out) {   // pentagon tag; (x, y) = left middle for inputs, left middle for outputs too
+        const w = Math.max(30, s.length * 6.4 + 14), h = 16;
+        const pts = out ? [[x, y - h / 2], [x + w - 7, y - h / 2], [x + w, y], [x + w - 7, y + h / 2], [x, y + h / 2]]
+                        : [[x, y - h / 2], [x + w - 7, y - h / 2], [x + w, y], [x + w - 7, y + h / 2], [x, y + h / 2]];
+        el('polygon', { points: pts.map(p => p.join(',')).join(' '), class: 'port' });
+        el('text', { x: x + 5, y: y + 3.6, class: 't-lbl', style: 'fill:var(--ink)' }, null, s);
+        return x + w;
+      },
+      op(x, y, w, h, s) { el('rect', { x, y, width: w, height: h, rx: 2, class: 'op' }); el('text', { x: x + w / 2, y: y + h / 2 + 4, 'text-anchor': 'middle', class: 't-op' }, null, s); },
+      reg(x, y, w, h, s, sub) {
+        el('rect', { x, y, width: w, height: h, rx: 2, class: 'rg' });
+        el('polyline', { points: `${x},${y + h - 11} ${x + 7},${y + h - 6} ${x},${y + h - 1}`, class: 'clk' });
+        el('text', { x: x + w / 2, y: y + h / 2 + (sub ? -1 : 4), 'text-anchor': 'middle', class: 't-op' }, null, s);
+        if (sub) el('text', { x: x + w / 2, y: y + h / 2 + 12, 'text-anchor': 'middle', class: 't-lbl' }, null, sub);
+      },
+      mem(x, y, w, h, s, sub) { el('rect', { x, y, width: w, height: h, rx: 2, class: 'mem' }); el('text', { x: x + w / 2, y: y + h / 2 - 2, 'text-anchor': 'middle', class: 't-op' }, null, s); if (sub) el('text', { x: x + w / 2, y: y + h / 2 + 12, 'text-anchor': 'middle', class: 't-lbl' }, null, sub); },
+      circ(x, y, s) { el('circle', { cx: x, cy: y, r: 10, class: 'op' }); el('text', { x, y: y + 4, 'text-anchor': 'middle', class: 't-op' }, null, s); },
+      mux(x, y, h, sel) { el('polygon', { points: `${x},${y} ${x + 20},${y + 8} ${x + 20},${y + h - 8} ${x},${y + h}`, class: 'op' }); el('text', { x: x + 3, y: y + 13, class: 't-lbl' }, null, '1'); el('text', { x: x + 3, y: y + h - 5, class: 't-lbl' }, null, '0'); if (sel) el('text', { x: x + 10, y: y + h + 12, 'text-anchor': 'middle', class: 't-lbl' }, null, sel); },
+      and(x, y, h) { h = h || 28; const r = Math.min(h / 2, 18); el('path', { d: `M${x} ${y} h${30 - r} a${r} ${h / 2} 0 0 1 0 ${h} h${-(30 - r)} z`, class: 'gate' }); return [x + 30, y + h / 2]; },
+      or(x, y, h) { h = h || 28; el('path', { d: `M${x} ${y} Q${x + 22} ${y} ${x + 34} ${y + h / 2} Q${x + 22} ${y + h} ${x} ${y + h} Q${x + 9} ${y + h / 2} ${x} ${y} z`, class: 'gate' }); return [x + 34, y + h / 2]; },
+      xor(x, y, h) { h = h || 28; el('path', { d: `M${x - 5} ${y} Q${x + 4} ${y + h / 2} ${x - 5} ${y + h}`, class: 'gate', style: 'fill:none' }); return K.or(x, y, h); },
+      not(x, y) { el('circle', { cx: x + 3.5, cy: y, r: 3.5, class: 'gate' }); },
+      fsm(x, y, s, on) { el('circle', { cx: x, cy: y, r: 22, class: on ? 'fsm-on' : 'fsm' }); el('text', { x, y: y + 4, 'text-anchor': 'middle', class: 't-op', style: on ? 'fill:var(--sheet)' : '' }, null, s); }
+    };
+    return K;
+  }
+
+  /* ---------------- block catalogue ---------------- */
+  const B = {};
+  function def(id, o) { B[id] = Object.assign({ id }, o); }
+
+  def('seq', { name: 'SEQ', full: 'chirp sequencer', kind: 'state', ref: '그림 · 프레임 타이밍',
+    desc: '50 ms 프레임마다 40 µs chirp 128개, 이어서 50 µs chirp 128개의 시작 펄스를 만듭니다. 블록 번호 blk는 FFT IP와 디멀티플렉서의 레인 태그가 되고, 각 블록이 끝나면 cpi_end로 그 레인의 맵을 내보내라고 알립니다.',
+    eq: `tick     = (us_cnt = CLK_MHZ − 1)
+fr_wrap  = tick · (fr_us = 49999)
+tc_end   = blk ? 49 : 39
+ce       = tick · active · (t_us = tc_end)      chirp 끝
+be       = ce · (k = 127)                        블록 끝
+ramp_go⁺ = fr_wrap + ce · ¬(k = 127) + be · ¬blk
+blk⁺     = ¬fr_wrap · (blk + be)
+active⁺  = fr_wrap + active · ¬(be · blk)
+cpi_end⁺ = be`,
+    sig: [['clk', 1, 'in', '100 MHz (설계 가정)'], ['ramp_go', 1, 'out', 'chirp 시작 펄스 → 합성기 램프, ADC 트리거'], ['blk', 1, 'out', '0 = 40 µs 블록, 1 = 50 µs 블록'], ['k', 7, 'out', '블록 안 chirp 번호 0–127'], ['cpi_end', 1, 'out', '블록 끝 펄스 → FFT IP'], ['frame_go', 1, 'out', '50 ms 프레임 시작']],
+    note: '원 블록도의 Chirp sequencer를 카운터 4개로 옮겼습니다. 두 블록을 chirp마다 섞지 않고 블록 단위로 보내야 각 레인의 chirp 간격이 균일하다는 원 설계 조건이 blk⁺ 식에 들어 있습니다. 클록 100 MHz는 설계 가정입니다.',
+    rel: ['fft', 'ctrl'], draw: drawSeq });
+  def('fft', { name: 'FFT IP', full: '2D-FFT + |·| (외부)', kind: 'ext', ref: '식 (1), 원 블록도 Hann + 2D-FFT',
+    desc: '이 회로에 들어 있지 않은 외부 IP입니다. 레인마다 Hann 창, 거리 FFT 256점, Doppler FFT 128점을 하고 RX 4개의 전력 합의 제곱근을 셀마다 하나씩 내보냅니다. 거리 bin n이 바깥 순서, Doppler bin m이 안쪽 순서입니다.',
+    eq: `s_mag[n, m] = √( Σ_rx |X_rx[n, m]|² )        16비트, 블록 부동소수점으로 정규화
+순서: n = 0…255 (바깥), m = 0…127 (안쪽, m ≥ 64 는 음의 Doppler)
+s_last = (n = 255) · (m = 127)`,
+    sig: [['s_vld', 1, 'out', '샘플 유효'], ['s_lane', 1, 'out', '레인 (= SEQ의 blk)'], ['s_n', 8, 'out', '거리 bin'], ['s_m', 7, 'out', 'Doppler bin (FFT 순서)'], ['s_mag', 16, 'out', '셀 크기'], ['s_last', 1, 'out', '맵의 마지막 샘플']],
+    note: '설계 가정: FFT IP가 맵마다 최댓값이 16비트에 맞도록 지수를 맞춰 준다고 봅니다(블록 부동소수점). 테스트 자극은 부동소수점 레이더 시뮬레이터의 맵을 레인마다 최댓값 65535로 정규화해 만듭니다.',
+    rel: ['seq', 'pkd', 'nbr'], draw: null });
+  def('pkd', { name: 'PKD', full: 'peak detector', kind: 'state', ref: '원 블록도 Peak detection',
+    desc: '흘러 들어오는 셀 크기를 지금까지의 최댓값과 비교해서 더 크면 값과 위치를 갱신합니다. 맵의 첫 샘플에서 무조건 갱신하므로 레인이 바뀔 때 따로 초기화하지 않습니다.',
+    eq: `first = (s_n = 0) · (s_m = 0)
+gt    = (s_mag > pk_mag)
+upd   = s_vld · (first + gt)
+pk_mag⁺ = upd ? s_mag : pk_mag
+pk_n⁺   = upd ? s_n   : pk_n
+pk_m⁺   = upd ? s_m   : pk_m`,
+    sig: [['s_mag', 16, 'in', '셀 크기'], ['s_n, s_m', '8, 7', 'in', '셀 위치'], ['upd', 1, 'out', '새 최댓값 (NBR로)'], ['pk_mag', 16, 'out', '최댓값 M_p'], ['pk_n, pk_m', '8, 7', 'out', '피크 위치 (n̂, m̂)']],
+    note: '같은 크기가 두 번 나오면 먼저 나온 셀을 씁니다(gt가 엄격한 부등호). 원 논문의 CFAR 대신 맵 최댓값을 쓰는 것은 논문의 위치 검출 정의와 같습니다. 이 블록이 성능을 결정합니다. 저SNR에서 잡음 셀을 잡으면 뒤의 모든 블록이 틀린 값을 받습니다.',
+    rel: ['fft', 'nbr', 'grk'], draw: drawPkd });
+  def('nbr', { name: 'NBR', full: '3×3 neighbour capture', kind: 'state', ref: '보간 입력',
+    desc: '맵 전체를 저장하지 않고 피크의 상하좌우 이웃 네 개를 잡습니다. 거리 쪽 앞 이웃은 한 행 전 값을 담은 라인 버퍼에서 읽고, 뒤 이웃과 Doppler 쪽 이웃은 그 셀이 지나갈 때 잡도록 대기 플래그를 세웁니다.',
+    eq: `dL⁺ = upd ? (s_m ≠ 0 ? prev : 0) : cap_dL ? s_mag : dL
+dR⁺ = upd ? (s_m = 127 ? row0 : 0) : cap_dR ? s_mag : dR
+rL⁺ = upd ? (s_n ≠ 0 ? LB[s_m] : 0) : rL
+rR⁺ = upd ? 0 : cap_rR ? s_mag : rR
+cap_dR = pend_dR · ¬upd · (s_n = pk_n) · (s_m = pk_m + 1)
+cap_dL = pend_dL · ¬upd · (s_n = pk_n) · (s_m = 127)     Doppler wrap
+cap_rR = pend_rR · ¬upd · (s_n = pk_n + 1) · (s_m = pk_m)
+pend_dL⁺ = upd · (s_m = 0) + pend_dL · ¬cap_dL
+pend_dR⁺ = upd · ¬(s_m = 127) + pend_dR · ¬cap_dR
+pend_rR⁺ = upd · ¬(s_n = 255) + pend_rR · ¬cap_rR
+rok⁺ = upd ? ¬(s_n = 0) · ¬(s_n = 255) : rok
+LB[s_m]⁺ = s_mag,  prev⁺ = s_mag,  row0⁺ = (s_m = 0) ? s_mag : row0`,
+    sig: [['LB', '128 × 16', 'mem', '한 행 전의 크기 (라인 버퍼)'], ['prev', 16, 'reg', '바로 전 샘플'], ['row0', 16, 'reg', '이 행의 m = 0 샘플'], ['pend_dL, pend_dR, pend_rR', '1 × 3', 'reg', '아직 안 지나간 이웃 대기'], ['dL, dR', 16, 'out', 'Doppler 이웃 (m − 1, m + 1, 원형)'], ['rL, rR', 16, 'out', '거리 이웃 (n − 1, n + 1)'], ['rok', 1, 'out', '거리 이웃이 둘 다 있음']],
+    note: 'Doppler 축은 원형이라 m = 0의 왼쪽 이웃은 같은 행의 마지막 m = 127입니다. 이 셀은 피크보다 나중에 오므로 pend_dL로 기다립니다. 고장 주입에서 이 대기를 끄면 검사기가 스트레스 1,000프레임 중 82건을 잡았습니다. 설계 가정: 라인 버퍼는 비동기 읽기 배열로 썼습니다. FPGA 블록 RAM에 넣으려면 주소를 한 사이클 앞당겨 줘야 합니다.',
+    rel: ['pkd', 'grk'], draw: drawNbr });
+  def('grk', { name: 'GRK', full: 'Grandke interpolation · shared divider', kind: 'state', ref: '원 블록도 Interpolation (Grandke, Hann)',
+    desc: '피크와 큰 쪽 이웃의 비로 bin 사이 위치 δ를 구합니다. 레인마다 Doppler 축과 거리 축 두 번, 프레임당 네 번의 나눗셈을 9비트 직렬 나눗셈기 하나로 차례로 합니다.',
+    eq: `side = (R ≥ L)                 큰 쪽 이웃
+Ms   = side ? R : L
+num  = 2·Ms − M_p,   den = Ms + M_p
+neg  = (num < 0) ⊕ ¬side
+load:  rem⁺ = |num|·2⁸,  q⁺ = 0,  i⁺ = 8
+i = 8 … 0 (한 사이클에 한 비트):
+  ge     = (rem ≥ den·2ⁱ)
+  rem⁺   = ge ? rem − den·2ⁱ : rem
+  q[i]⁺  = ge
+δ = neg ? −q : q               Q.8 bin, −256 … +128
+δ_r = rok ? δ : 0              거리 끝 bin에서는 보간하지 않음`,
+    sig: [['M_p, L, R', '16 × 3', 'in', '피크와 두 이웃 (CTRL이 Doppler/거리 축 선택)'], ['load', 1, 'in', 'CTRL: 나눗셈 시작'], ['rem', 26, 'reg', '나머지'], ['den', 17, 'reg', '제수 Ms + M_p'], ['i', 4, 'reg', '현재 몫 비트'], ['q', 9, 'reg', '몫'], ['δ', 10, 'out', 'bin 이하 위치 (Q.8, 부호 있음)']],
+    note: 'Grandke 식 δ = (2α − 1)/(α + 1), α = Ms/M_p 를 나눗셈 한 번으로 바꿔 썼습니다. 나눗셈기를 넷 두면 8사이클 빨라지지만 맵을 읽는 데 32,768사이클이 걸리므로 의미가 없습니다. 고정소수점 결과는 부동소수점 식과 최대 1 LSB(1/256 bin) 차이입니다.',
+    rel: ['nbr', 'fv', 'ctrl'], draw: drawGrk });
+  def('fv', { name: 'FV', full: 'folded velocity · range bin', kind: 'comb', ref: '식 (2)',
+    desc: 'Doppler bin 번호에 δ를 더하고 레인별 상수를 곱해 접힌 속도를 만듭니다. 거리 bin도 같은 방식으로 Q8 값으로 만듭니다.',
+    eq: `ms    = sign-extend(pk_m)            FFT bin → −64 … 63
+kd    = ms·2⁸ + δ_d                  Q7.8 bin
+v_fold = (kd × KV[lane]) >>> 15      1/256 m/s
+         KV = 12468 (40 µs), 9974 (50 µs)   = Δvᵢ·2¹⁵
+kr    = pk_n·2⁸ + δ_r                Q8 bin`,
+    sig: [['pk_m, pk_n', '7, 8', 'in', '피크 위치'], ['δ_d, δ_r', '10, 10', 'in', 'GRK 결과'], ['lane', 1, 'in', 'CTRL'], ['v_fold', 18, 'out', '접힌 속도, 1/256 m/s'], ['kr', 18, 'out', '거리 bin, Q8']],
+    note: 'Δv₁ = 0.3805 m/s, Δv₂ = 0.3044 m/s를 2¹⁵배 한 상수입니다. 상수 곱은 시프트와 덧셈으로 바꿀 수 있습니다.',
+    rel: ['grk', 'lreg'], draw: drawFv });
+  def('lreg', { name: 'LREG', full: 'lane registers', kind: 'state', ref: '원 블록도 두 레인이 만나는 곳',
+    desc: '레인 1 결과를 레인 2 맵이 다 들어올 때까지 붙잡아 둡니다. 두 레인은 이 레지스터 다음에서만 만납니다.',
+    eq: `en1 = (st = FV) · ¬lane      v1⁺, kr1⁺ = en1 ? v_fold, kr : v1, kr1
+en2 = (st = FV) · lane       v2⁺, kr2⁺ = en2 ? v_fold, kr : v2, kr2`,
+    sig: [['v_fold, kr', '18, 18', 'in', 'FV'], ['v1, kr1', '18, 18', 'reg', '레인 1 (40 µs)'], ['v2, kr2', '18, 18', 'reg', '레인 2 (50 µs)']],
+    note: '레인 2 맵은 레인 1 계산이 끝난 뒤(약 5 ms 뒤 CPI 2 종료 시점)에 들어오므로 두 레인이 같은 PKD·GRK를 차례로 씁니다.',
+    rel: ['fv', 'cand'], draw: drawLreg });
+  def('cand', { name: 'CAND ×2', full: 'candidate sets', kind: 'comb', ref: '식 (6)',
+    desc: '접힌 속도에 레인 주기의 정수배를 더해 후보를 만들고 |c| ≤ V_c 인 것만 유효로 표시합니다. 레인 1은 3개(k = −1, 0, 1), 레인 2는 5개(k = −2 … 2) 슬롯입니다.',
+    eq: `c1ₖ = v1 + k·P1,  k = −1, 0, 1        P1 = 12468 (48.70 m/s)
+c2ₖ = v2 + k·P2,  k = −2 … 2          P2 = 9974 (38.96 m/s)
+okᵢₖ = (cᵢₖ ≤ V_c) · (cᵢₖ ≥ −V_c)      V_c = 18176 (71 m/s)`,
+    sig: [['v1, v2', 18, 'in', 'LREG'], ['c1₀…c1₂', '19 × 3', 'out', '레인 1 후보'], ['c2₀…c2₄', '19 × 5', 'out', '레인 2 후보'], ['ok1, ok2', '3, 5', 'out', '후보 유효']],
+    note: '슬롯 수는 |v₁| ≤ 24.35, |v₂| ≤ 19.48에서 ±71 m/s 안에 들 수 있는 최대 개수로 정했습니다. 원 논문의 후보 개수 2–3, 3–4와 같습니다. 그림은 레인 1의 한 슬롯이고 같은 회로가 8개 있습니다.',
+    rel: ['lreg', 'match'], draw: drawCand });
+  def('match', { name: 'MATCH ×15', full: 'closest-pair compare', kind: 'comb', ref: '식 (7)',
+    desc: '레인 1 후보 3개와 레인 2 후보 5개의 모든 쌍(15개)의 차이를 동시에 구하고, 그중 가장 작은 쌍을 고릅니다. 유효하지 않은 쌍은 최댓값 DMAX로 바꿔 선택에서 빠지게 합니다.',
+    eq: `dᵢⱼ  = (ok1ᵢ · ok2ⱼ) ? |c1ᵢ − c2ⱼ| : DMAX       DMAX = 2¹⁷ − 1
+(dmin, sel) = 첫 번째 최소 (i, j 순서)
+  s = 0: m₀ = d₀₀
+  s = 1…14: lt = (d_s < m_{s−1}),  m_s = lt ? d_s : m_{s−1},  sel = lt ? s : sel
+fn = (dmin = DMAX)                   유효한 쌍이 없음`,
+    sig: [['c1, c2, ok1, ok2', '—', 'in', 'CAND'], ['d₀₀ … d₂₄', '17 × 15', 'wire', '쌍별 차이'], ['dmin', 17, 'out', '가장 작은 차이'], ['sel', 4, 'out', '선택된 쌍 번호 i·5 + j']],
+    note: '같은 차이가 둘이면 번호가 작은 쌍을 씁니다(엄격한 <). 틀린 쌍은 최소 g = 9.74 m/s 떨어져 있으므로 정상 동작에서는 동률이 생기지 않습니다. 스트레스 시험에서 V_c 밖 표적일 때 g 근처의 두 쌍이 동률에 가까워진 경우가 13건 있었고, 모두 fv로 플래그되었습니다. 그림은 한 쌍의 회로이고 같은 회로가 15개 있습니다.',
+    rel: ['cand', 'rc', 'flag'], draw: drawMatch });
+  def('rc', { name: 'RC', full: 'average · range correction', kind: 'comb', ref: '식 (3), 비교 분석의 개선안',
+    desc: '고른 쌍의 평균이 속도입니다. 이 속도로 두 레인의 거리-Doppler 결합을 각각 빼서 거리를 바로잡고, 두 레인 거리의 평균을 출력합니다.',
+    eq: `v̂  = (c1_sel + c2_sel) >>> 1
+r1 = kr1 − (v̂ × KC1) >>> 16          KC1 = 1346  (2·Tc1/λ · 2¹⁶)
+r2 = kr2 − (v̂ × KC2) >>> 16          KC2 = 1682  (2·Tc2/λ · 2¹⁶)
+R̂  = GATE_EN ? (r1 + r2) >>> 1 : r1   Q8 bin, × 0.5 m`,
+    sig: [['sel', 4, 'in', 'MATCH'], ['kr1, kr2', '18, 18', 'in', 'LREG'], ['v̂', 18, 'out', '복원 속도'], ['r1, r2', '19, 19', 'out', '레인별 보정 거리 (FLAG로)'], ['R̂', 18, 'out', '보정 거리']],
+    note: '원 설계는 레인 1 거리만 썼습니다(GATE_EN = 0). 두 레인을 모두 보정하면 평균으로 잡음이 줄고, 둘의 차이를 FLAG에서 검사할 수 있습니다.',
+    rel: ['match', 'flag', 'oreg'], draw: drawRc });
+  def('flag', { name: 'FLAG', full: 'validity flag', kind: 'comb', ref: '원 블록도 Validity flag + 개선안',
+    desc: '측정을 추적기에 넘기지 않을 네 가지 경우를 OR로 묶습니다. fv와 fn은 원 설계, fr은 비교 분석에서 제안한 거리 일치 검사, fo는 검증 중에 찾아 추가한 범위 밖 검사입니다.',
+    eq: `fv   = (dmin > 623)                  g/4 = 2.435 m/s
+fr   = GATE_EN · (|r1 − r2| > 256)    두 레인 거리가 1 bin 넘게 다름
+fn   = (dmin = DMAX)
+fo   = (R̂ < 0) + (R̂ > 255·2⁸)          거리가 bin 255를 넘어 접힘
+flag = fv + fr + fn + fo`,
+    sig: [['dmin', 17, 'in', 'MATCH'], ['r1, r2, R̂', '19, 19, 18', 'in', 'RC'], ['fv, fr, fn, fo', '1 × 4', 'out', '원인별 플래그'], ['flag', 1, 'out', '1이면 추적기에 넘기지 않음']],
+    note: 'g/4는 원 설계에 숫자가 없어 정한 값입니다(설계 가정). 비교 분석에서 맵 SNR 9 dB의 경고 없는 오류가 fv만으로는 32%, fr을 더하면 0.2%였습니다. 이 회로의 스트레스 시험에서도 fr을 끄면 경고 없는 오류가 0에서 82건으로 늘었습니다.',
+    rel: ['match', 'rc', 'oreg'], draw: drawFlag });
+  def('oreg', { name: 'OREG', full: 'output register', kind: 'state', ref: '→ tracker',
+    desc: 'COMB 사이클의 결과를 레지스터에 담고 out_vld를 한 사이클 올립니다.',
+    eq: `en = (st = COMB)
+out_v⁺, out_R⁺, out_flag⁺, out_fbits⁺ = en ? v̂, R̂, flag, {fv, fr, fn, fo} : 이전 값
+out_vld⁺ = en`,
+    sig: [['out_v', 18, 'out', '속도, 1/256 m/s'], ['out_R', 18, 'out', '거리, Q8 bin (× 0.5 m)'], ['out_flag', 1, 'out', '유효성 플래그'], ['out_fbits', 5, 'out', '{fv, fr, fn, fo, flag}'], ['out_vld', 1, 'out', '결과 유효 펄스']],
+    note: '추적기 쪽에서 플래그 원인별로 다르게 다룰 수 있도록 원인 비트를 함께 내보냅니다.',
+    rel: ['flag', 'ctrl'], draw: drawOreg });
+  def('ctrl', { name: 'CTRL', full: 'sequencing FSM', kind: 'state', ref: '처리 순서',
+    desc: '레인 하나의 맵이 다 들어오면 Doppler 나눗셈 10사이클, 거리 나눗셈 10사이클, FV 1사이클을 차례로 진행합니다. 레인 2가 끝나면 COMB 1사이클에 결과를 냅니다.',
+    eq: `IDLE/SCAN → DIVD : s_vld · s_last          (lane⁺ = s_lane)
+DIVD → DIVR      : cnt = 9
+DIVR → FV        : cnt = 9
+FV → IDLE        : ¬lane
+FV → COMB        : lane
+COMB → IDLE      : 항상
+div_load = (st = DIVD + st = DIVR) · (cnt = 0)
+use_r    = (st = DIVR)
+dd_en    = (st = DIVR) · (cnt = 0)       Doppler δ를 붙잡음`,
+    sig: [['state', 3, 'reg', 'IDLE, SCAN, DIVD, DIVR, FV, COMB'], ['cnt', 4, 'reg', '나눗셈 사이클 0–9'], ['lane', 1, 'reg', '지금 처리 중인 레인'], ['dd', 10, 'reg', 'Doppler δ (거리 나눗셈 동안 보관)']],
+    note: '레인 하나에 32,768 + 21사이클, 프레임 하나에 65,579사이클입니다. 100 MHz면 0.66 ms로 50 ms 프레임의 1.3%입니다.',
+    rel: ['grk', 'lreg', 'oreg'], draw: drawCtrl });
+
+  /* ---------------- top sheet ---------------- */
+  function topSheet() {
+    const svg = document.getElementById('top');
+    const K = Kit(svg);
+    for (let x = 0; x <= 1240; x += 40) K.el('line', { x1: x, y1: 0, x2: x, y2: 540, stroke: 'var(--grid)', 'stroke-width': .5 });
+    for (let y = 0; y <= 540; y += 40) K.el('line', { x1: 0, y1: y, x2: 1240, y2: y, stroke: 'var(--grid)', 'stroke-width': .5 });
+    const P = {};
+    function blk(id, x, y, w, h) {
+      const b = B[id];
+      const g = K.el('g', { class: 'blk ' + b.kind, 'data-id': id, tabindex: 0, role: 'button', 'aria-label': b.name + ' ' + b.full });
+      K.el('rect', { x, y, width: w, height: h, rx: 3, class: 'b' }, g);
+      if (b.kind === 'state') K.el('polyline', { points: `${x},${y + h - 12} ${x + 8},${y + h - 6} ${x},${y + h}`, class: 'clk' }, g);
+      K.el('text', { x: x + w / 2, y: y + h / 2 - 2, 'text-anchor': 'middle', class: 't-ttl' }, g, b.name);
+      const SUBT = { seq: 'chirp sequencer', fft: '2D-FFT + |·| (외부)', pkd: 'peak detector', nbr: 'neighbour capture', grk: 'Grandke · divider', fv: 'folded velocity', lreg: 'lane registers', cand: 'candidate sets', match: 'closest pair', rc: 'average · range', flag: 'validity flag', oreg: 'output register', ctrl: 'sequencing FSM' };
+      K.el('text', { x: x + w / 2, y: y + h / 2 + 13, 'text-anchor': 'middle', class: 't-sub' }, g, SUBT[id]);
+      P[id] = { x, y, w, h, cx: x + w / 2, cy: y + h / 2, r: x + w, b: y + h };
+    }
+    const W = 132, H = 62, Y1 = 120, Y2 = 300;
+    blk('seq', 30, 14, 150, 56);
+    blk('fft', 30, Y1, 150, H);
+    blk('pkd', 230, Y1, W, H);
+    blk('nbr', 410, Y1, W, H);
+    blk('grk', 590, Y1, W, H);
+    blk('fv', 770, Y1, W, H);
+    blk('lreg', 950, Y1, W, H);
+    blk('cand', 230, Y2, W, H);
+    blk('match', 410, Y2, W, H);
+    blk('rc', 590, Y2, W, H);
+    blk('flag', 770, Y2, W, H);
+    blk('oreg', 950, Y2, W, H);
+    blk('ctrl', 590, 440, W, H);
+    const cy1 = Y1 + H / 2, cy2 = Y2 + H / 2;
+    // ports
+    K.port(1110, 42, 'ramp_go → RF', true);
+    K.w([[180, 42], [1110, 42]], 'w');
+    K.w([[105, 70], [105, Y1]], 'ctl'); K.t(111, 100, 'blk, cpi_end');
+    K.port(1110, cy2, 'tracker', true);
+    // row 1 buses (short names, details in each block)
+    K.w([[180, cy1], [230, cy1]], 'bus'); K.t(196, cy1 - 7, 'mag');
+    K.w([[362, cy1], [410, cy1]], 'bus'); K.t(376, cy1 - 7, 'upd');
+    K.w([[542, cy1], [590, cy1]], 'bus'); K.t(550, cy1 - 7, 'Mp,L,R');
+    K.w([[722, cy1], [770, cy1]], 'bus'); K.t(740, cy1 - 7, 'δ');
+    K.w([[902, cy1], [950, cy1]], 'bus'); K.t(912, cy1 - 7, 'v,kr');
+    K.w([[205, cy1], [205, 98], [476, 98], [476, Y1]], 'w'); K.dot(205, cy1); K.t(282, 92, 's_mag → line buffer');
+    // wrap from LREG to CAND, branch to RC
+    K.w([[1016, Y1 + H], [1016, 240], [200, 240], [200, cy2], [230, cy2]], 'bus'); K.t(760, 234, 'v1, kr1, v2, kr2');
+    K.w([[656, 240], [656, Y2]], 'w'); K.dot(656, 240); K.t(662, 262, 'kr1, kr2');
+    K.w([[362, cy2], [410, cy2]], 'bus'); K.t(380, cy2 - 7, 'c,ok');
+    K.w([[542, cy2], [590, cy2]], 'bus'); K.t(552, cy2 - 7, 'd,sel');
+    K.w([[722, cy2], [770, cy2]], 'bus'); K.t(732, cy2 - 7, 'r1,r2');
+    K.w([[902, cy2], [950, cy2]], 'bus'); K.t(908, cy2 - 7, 'v̂,R̂,f');
+    K.w([[1082, cy2], [1110, cy2]], 'bus');
+    K.w([[476, Y2 + H], [476, 384], [836, 384], [836, Y2 + H]], 'w'); K.t(640, 378, 'dmin');
+    // ctrl lines
+    K.w([[620, 440], [620, 410], [560, 410], [560, 206], [640, 206], [640, Y1 + H]], 'ctl'); K.t(566, 200, 'load, use_r');
+    K.w([[656, 440], [656, 420], [1060, 420], [1060, Y1 + H]], 'ctl'); K.t(1066, 214, 'en1, en2');
+    K.w([[690, 440], [690, 430], [1016, 430], [1016, Y2 + H]], 'ctl'); K.t(900, 444, 'en (COMB)');
+    K.w([[180, 470], [590, 470]], 'ctl'); K.t(190, 464, 's_vld, s_last, s_lane');
+    K.port(110, 470, 'from FFT', false);
+    svg.querySelectorAll('.blk').forEach(g => {
+      const id = g.getAttribute('data-id');
+      g.addEventListener('click', () => select(id, true));
+      g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(id, true); } });
+    });
+  }
+
+  /* ---------------- sub-sheets ---------------- */
+  function drawSeq(K) {
+    K.port(10, 40, 'clk'); K.reg(80, 22, 90, 36, 'us_cnt', '[7:0]'); K.w([[44, 40], [80, 40]]);
+    K.op(200, 28, 70, 24, '= 99'); K.w([[170, 40], [200, 40]]); K.w([[270, 40], [300, 40]], 'w', false); K.t(276, 34, 'tick');
+    K.w([[300, 40], [300, 262]], 'w', false); K.dot(300, 40);
+    K.reg(80, 82, 90, 36, 'fr_us', '[15:0]'); K.op(200, 88, 70, 24, '= 49999'); K.w([[170, 100], [200, 100]]);
+    const a1 = K.and(330, 86, 30); K.w([[270, 100], [282, 100], [282, 92], [330, 92]]); K.w([[300, 110], [330, 110]]); K.dot(300, 110); K.t(a1[0] + 6, a1[1] - 6, 'fr_wrap');
+    K.reg(80, 152, 90, 36, 't_us', '[5:0]'); K.op(200, 158, 70, 24, '= tc_end'); K.w([[170, 170], [200, 170]]);
+    K.mux(220, 200, 36, 'blk'); K.t(196, 212, '49'); K.t(196, 233, '39'); K.w([[240, 218], [250, 218], [250, 182]]);
+    const a2 = K.and(330, 154, 40); K.w([[270, 170], [282, 170], [282, 162], [330, 162]]); K.w([[300, 174], [330, 174]]); K.dot(300, 174);
+    K.port(250, 290, 'active'); K.w([[306, 290], [316, 290], [316, 186], [330, 186]]); K.t(a2[0] + 6, a2[1] - 6, 'ce');
+    K.reg(80, 244, 90, 36, 'k', '[6:0]'); K.op(200, 250, 70, 24, '= 127'); K.w([[170, 262], [200, 262]]);
+    const a3 = K.and(400, 238, 30); K.w([[270, 262], [282, 262], [282, 262], [400, 262]]); K.w([[a2[0], a2[1]], [380, a2[1]], [380, 244], [400, 244]]); K.dot(380, a2[1]); K.t(a3[0] + 6, a3[1] - 6, 'be');
+    K.op(396, 54, 136, 24, 'ce·¬k127 + be·¬blk'); K.w([[380, a2[1]], [380, 66], [396, 66]], 'w');
+    const o = K.or(450, 98, 30); K.w([[a1[0], a1[1]], [440, a1[1]], [440, 104], [452, 104]]); K.w([[530, 66], [540, 66], [540, 86], [446, 86], [446, 122], [452, 122]], 'w', false);
+    K.reg(520, 96, 96, 32, 'ramp_go'); K.w([[o[0], o[1]], [520, o[1]]]);
+    K.reg(520, 160, 96, 32, 'blk'); K.reg(520, 214, 96, 32, 'active'); K.reg(520, 268, 96, 32, 'cpi_end');
+    K.w([[a3[0], a3[1]], [500, a3[1]], [500, 284], [520, 284]]); K.dot(500, a3[1]); K.w([[500, a3[1]], [500, 176], [520, 176]], 'w');
+    K.w([[440, a1[1]], [440, 150], [490, 150], [490, 230], [520, 230]], 'w'); K.dot(440, 150);
+    return '0 0 640 320';
+  }
+
+  function drawPkd(K) {
+    K.port(10, 50, 's_mag[15:0]'); K.port(10, 200, 's_n[7:0]'); K.port(10, 240, 's_m[6:0]'); K.port(10, 290, 's_vld');
+    K.w([[90, 50], [470, 50]]); K.dot(120, 50);
+    K.op(160, 60, 44, 30, '>'); K.w([[120, 50], [120, 68], [160, 68]]);
+    K.reg(470, 32, 100, 36, 'pk_mag', 'EN');
+    K.w([[570, 50], [600, 50], [600, 16], [140, 16], [140, 82], [160, 82]]); K.t(380, 12, 'pk_mag');
+    K.t(212, 70, 'gt');
+    K.op(120, 126, 50, 22, '= 0'); K.op(120, 156, 50, 22, '= 0');
+    K.w([[80, 200], [100, 200], [100, 137], [120, 137]]); K.dot(100, 200);
+    K.w([[80, 240], [90, 240], [90, 167], [120, 167]]); K.dot(90, 240);
+    const a = K.and(200, 128, 46); K.w([[170, 137], [200, 137]]); K.w([[170, 167], [200, 165]]); K.t(a[0] + 4, a[1] + 14, 'first');
+    const o = K.or(290, 62, 40); K.w([[204, 75], [292, 72]]); K.w([[a[0], a[1]], [262, a[1]], [262, 94], [293, 94]]);
+    const u = K.and(350, 76, 32); K.w([[o[0], o[1]], [350, o[1]]]); K.w([[60, 290], [338, 290], [338, 102], [350, 102]]);
+    K.t(u[0] + 6, u[1] - 6, 'upd');
+    K.w([[u[0], u[1]], [440, u[1]], [440, 260]], 'w', false); K.dot(440, u[1]);
+    K.w([[440, 62], [470, 62]]); K.w([[440, 192], [470, 192]]); K.w([[440, 234], [470, 234]]); K.dot(440, 192); K.dot(440, 234);
+    K.reg(470, 170, 100, 32, 'pk_n', 'EN'); K.reg(470, 212, 100, 32, 'pk_m', 'EN');
+    K.w([[100, 200], [100, 214], [420, 214], [420, 182], [470, 182]], 'w'); K.w([[90, 240], [90, 250], [430, 250], [430, 224], [470, 224]], 'w');
+    K.w([[440, 260], [440, 280], [490, 280]], 'w', false); K.port(490, 280, 'upd → NBR', true);
+    return '0 0 640 310';
+  }
+
+  function drawNbr(K) {
+    K.port(10, 40, 's_mag'); K.port(10, 152, 's_m'); K.port(10, 290, 'upd');
+    K.w([[56, 40], [150, 40]]); K.dot(100, 40);
+    K.reg(150, 26, 80, 28, 'prev');
+    K.mem(130, 110, 110, 60, 'LB', '128 × 16'); K.w([[100, 40], [100, 124], [130, 124]]); K.w([[44, 152], [130, 152]]); K.t(134, 186, 'addr = s_m');
+    K.reg(150, 212, 80, 28, 'row0'); K.t(150, 256, 'EN: s_m = 0'); K.w([[100, 124], [100, 226], [150, 226]], 'w'); K.dot(100, 124);
+    K.mux(300, 18, 40, 's_m ≠ 0'); K.w([[230, 40], [262, 40], [262, 30], [300, 30]]); K.t(282, 54, '0');
+    K.mux(300, 116, 40, 's_n ≠ 0'); K.w([[240, 140], [262, 140], [262, 128], [300, 128]]); K.t(282, 152, '0');
+    K.mux(300, 204, 40, 's_m = 127'); K.w([[230, 226], [262, 226], [262, 216], [300, 216]]); K.t(282, 240, '0');
+    K.reg(420, 22, 80, 30, 'dL'); K.reg(420, 120, 80, 30, 'rL'); K.reg(420, 208, 80, 30, 'dR'); K.reg(420, 258, 80, 30, 'rR');
+    K.w([[320, 38], [420, 38]]); K.w([[320, 136], [420, 136]]); K.w([[320, 224], [420, 224]]);
+    K.w([[100, 40], [100, 10], [390, 10], [390, 270], [420, 270]], 'w'); K.t(250, 8, 's_mag (cap)');
+    K.w([[390, 46], [420, 46]]); K.w([[390, 232], [420, 232]]); K.dot(390, 46); K.dot(390, 232);
+    K.reg(540, 140, 90, 34, 'pend ×3'); K.op(540, 196, 90, 36, ''); K.t(585, 211, 'cap =', 't-op', 'middle'); K.t(585, 226, 'pend·¬upd·hit', 't-lbl', 'middle');
+    K.w([[585, 174], [585, 196]]);
+    K.w([[540, 214], [510, 214], [510, 62], [460, 62], [460, 52]], 'ctl'); K.w([[510, 214], [510, 248], [460, 248], [460, 238]], 'ctl'); K.w([[510, 248], [510, 300], [460, 300], [460, 288]], 'ctl');
+    K.w([[56, 290], [360, 290], [360, 306]], 'w', false); K.t(370, 318, 'upd → mux 선택, pend 세트');
+    return '0 0 650 330';
+  }
+
+  function drawGrk(K) {
+    K.port(10, 36, 'R'); K.port(10, 76, 'L'); K.port(10, 200, 'M_p'); K.port(10, 300, 'load');
+    K.w([[40, 36], [170, 36]]); K.w([[40, 76], [170, 76]]); K.dot(70, 36); K.dot(80, 76);
+    K.op(84, 100, 40, 22, '≥'); K.w([[70, 36], [70, 106], [84, 106]]); K.w([[80, 76], [80, 116], [84, 116]]); K.t(128, 106, 'side');
+    K.mux(170, 24, 60, 'side'); K.w([[124, 111], [180, 111], [180, 92]], 'w', false);
+    K.t(196, 48, 'Ms'); K.dot(204, 54);
+    K.op(220, 42, 36, 22, '×2'); K.w([[190, 54], [220, 54]]);
+    K.circ(290, 54, '−'); K.w([[256, 54], [280, 54]]); K.w([[40, 200], [290, 200], [290, 64]]); K.dot(290, 200); K.t(304, 46, 'num');
+    K.op(330, 42, 40, 22, '|x|'); K.w([[300, 54], [330, 54]]); K.dot(316, 54);
+    K.circ(290, 140, '+'); K.w([[204, 54], [204, 140], [280, 140]]); K.w([[290, 200], [290, 150]], 'w', false);
+    const x1 = K.xor(320, 160, 28); K.w([[316, 54], [316, 166], [322, 166]], 'w', false); K.t(318, 98, 'sign');
+    K.w([[150, 111], [150, 182], [310, 182], [322, 182]], 'w', false); K.not(312, 182); K.t(x1[0] + 4, x1[1] - 6, 'neg');
+    K.reg(420, 36, 90, 36, 'rem', '[25:0]'); K.w([[370, 54], [420, 54]]);
+    K.reg(420, 122, 90, 36, 'den', '[16:0]'); K.w([[300, 140], [420, 140]]);
+    K.op(540, 128, 50, 24, '≪ i'); K.w([[510, 140], [540, 140]]);
+    K.op(540, 42, 50, 24, '≥'); K.w([[510, 50], [540, 50]]); K.w([[565, 128], [565, 66]]); K.t(596, 52, 'ge');
+    K.circ(475, 98, '−'); K.w([[510, 62], [525, 62], [525, 98], [485, 98]], 'w'); K.w([[590, 140], [610, 140], [610, 112], [475, 112], [475, 108]], 'w');
+    K.w([[465, 98], [404, 98], [404, 46], [420, 46]]); K.t(380, 92, 'rem − den·2ⁱ');
+    K.w([[590, 54], [630, 54], [630, 226], [510, 226]]); K.t(560, 222, 'q[i] = ge');
+    K.reg(420, 208, 90, 32, 'q', '[8:0]'); K.reg(420, 256, 90, 30, 'i', '8 → 0');
+    K.mux(560, 250, 40, 'neg'); K.w([[510, 224], [540, 224], [540, 290], [560, 290]], 'w', false); K.dot(540, 236);
+    K.t(524, 256, '−q'); K.w([[540, 236], [520, 236], [520, 262], [560, 262]], 'w', false);
+    K.port(600, 270, 'δ', true); K.w([[580, 270], [600, 270]], 'w', false);
+    K.w([[54, 300], [400, 300], [400, 270], [420, 270]], 'ctl'); K.w([[400, 270], [400, 226], [420, 226]], 'ctl', false);
+    return '0 0 660 330';
+  }
+
+  function drawFv(K) {
+    K.port(10, 40, 'pk_m[6:0]'); K.port(10, 110, 'δ_d'); K.port(10, 170, 'lane'); K.port(10, 230, 'pk_n[7:0]'); K.port(10, 280, 'δ_r'); K.port(10, 310, 'rok');
+    K.op(110, 28, 70, 24, 'sext 8'); K.w([[86, 40], [110, 40]]); K.op(200, 28, 50, 24, '≪ 8'); K.w([[180, 40], [200, 40]]);
+    K.circ(290, 70, '+'); K.w([[250, 40], [290, 40], [290, 60]]); K.w([[44, 110], [290, 110], [290, 80]]); K.t(304, 62, 'kd');
+    K.mux(330, 140, 44, 'lane'); K.t(270, 150, 'KV2 9974'); K.t(270, 184, 'KV1 12468'); K.w([[44, 170], [350, 170], [350, 176]], 'ctl', false);
+    K.circ(410, 100, '×'); K.w([[300, 70], [410, 70], [410, 90]]); K.w([[350, 162], [410, 162], [410, 110]]);
+    K.op(450, 88, 60, 24, '>>> 15'); K.w([[420, 100], [450, 100]]); K.port(540, 100, 'v_fold', true); K.w([[510, 100], [540, 100]]);
+    K.op(110, 218, 50, 24, '≪ 8'); K.w([[86, 230], [110, 230]]);
+    const a = K.and(110, 268, 30); K.w([[40, 280], [110, 276]]); K.w([[44, 310], [96, 310], [96, 292], [110, 292]]);
+    K.circ(300, 250, '+'); K.w([[160, 230], [300, 230], [300, 240]]); K.w([[a[0], a[1]], [300, a[1]], [300, 260]]);
+    K.port(540, 250, 'kr', true); K.w([[310, 250], [540, 250]]);
+    return '0 0 640 330';
+  }
+  function drawLreg(K) {
+    K.port(10, 60, 'v_fold'); K.port(10, 180, 'kr'); K.port(10, 280, 'st = FV'); K.port(110, 310, 'lane');
+    K.reg(250, 30, 110, 36, 'v1', 'EN en1'); K.reg(250, 90, 110, 36, 'v2', 'EN en2');
+    K.reg(250, 150, 110, 36, 'kr1', 'EN en1'); K.reg(250, 210, 110, 36, 'kr2', 'EN en2');
+    K.w([[60, 60], [200, 60], [200, 44], [250, 44]]); K.w([[200, 60], [200, 104], [250, 104]], 'w'); K.dot(200, 60);
+    K.w([[44, 180], [200, 180], [200, 164], [250, 164]]); K.w([[200, 180], [200, 224], [250, 224]], 'w'); K.dot(200, 180);
+    const a1 = K.and(470, 262, 26); const a2 = K.and(470, 300, 26);
+    K.w([[78, 280], [450, 280], [450, 268], [470, 268]]); K.w([[450, 280], [450, 306], [470, 306]], 'w'); K.dot(450, 280);
+    K.w([[146, 310], [420, 310], [420, 320], [470, 320]]); K.not(462, 282); K.w([[420, 310], [420, 282], [462, 282]], 'w', false); K.dot(420, 310);
+    K.t(a1[0] + 4, a1[1] + 4, 'en1'); K.t(a2[0] + 4, a2[1] + 4, 'en2');
+    K.port(430, 48, 'v1, kr1 → CAND, RC', true); K.port(430, 108, 'v2, kr2', true);
+    K.w([[360, 48], [430, 48]]); K.w([[360, 108], [430, 108]]);
+    return '0 0 640 340';
+  }
+  function drawCand(K) {
+    K.port(10, 70, 'v1[17:0]'); K.op(110, 150, 120, 24, 'k·P1 = −12468'); K.circ(280, 70, '+'); K.w([[70, 70], [270, 70]]); K.w([[230, 162], [280, 162], [280, 80]]);
+    K.t(296, 60, 'c1₀'); K.w([[290, 70], [360, 70]]); K.dot(330, 70);
+    K.op(380, 30, 90, 24, '≤ 18176'); K.op(380, 100, 90, 24, '≥ −18176'); K.w([[330, 70], [330, 42], [380, 42]]); K.w([[330, 70], [330, 112], [380, 112]]);
+    const a = K.and(500, 56, 32); K.w([[470, 42], [490, 42], [490, 62], [500, 62]]); K.w([[470, 112], [490, 112], [490, 82], [500, 82]]);
+    K.port(570, a[1], 'ok1₀', true); K.w([[a[0], a[1]], [570, a[1]]]);
+    K.port(570, 170, 'c1₀[18:0]', true); K.w([[330, 70], [330, 150], [560, 150], [560, 170], [570, 170]], 'w', false);
+    K.t(20, 230, '같은 슬롯: c1₁ (k=0), c1₂ (k=+1), c2₀…c2₄ (k=−2…+2, P2 = 9974)');
+    return '0 0 660 250';
+  }
+  function drawMatch(K) {
+    K.port(10, 40, 'c1ᵢ'); K.port(10, 80, 'c2ⱼ'); K.port(10, 150, 'ok1ᵢ'); K.port(10, 180, 'ok2ⱼ');
+    K.circ(130, 60, '−'); K.w([[46, 40], [130, 40], [130, 50]]); K.w([[46, 80], [130, 80], [130, 70]]);
+    K.op(170, 48, 44, 24, '|x|'); K.w([[140, 60], [170, 60]]);
+    const a = K.and(130, 150, 36); K.w([[54, 150], [130, 156]]); K.w([[54, 180], [130, 180]]);
+    K.mux(260, 40, 60, 'okᵢⱼ'); K.w([[214, 60], [260, 54]]); K.t(206, 96, 'DMAX'); K.w([[230, 92], [260, 88]]);
+    K.w([[a[0], a[1]], [270, a[1]], [270, 92]], 'w', false); K.t(a[0] + 4, a[1] - 6, 'okᵢⱼ');
+    K.t(290, 66, 'dᵢⱼ'); K.w([[280, 70], [330, 70]]);
+    K.op(330, 30, 110, 140, ''); K.t(385, 80, 'MIN 15:1', 't-op', 'middle'); K.t(385, 98, 'first-wins', 't-lbl', 'middle');
+    K.t(342, 140, 'd₀₀ … d₂₄'); K.w([[300, 120], [330, 120]]); K.w([[300, 140], [330, 140]]); K.w([[300, 160], [330, 160]]);
+    K.port(500, 70, 'dmin[16:0]', true); K.w([[440, 70], [500, 70]]);
+    K.port(500, 130, 'sel[3:0]', true); K.w([[440, 130], [500, 130]]);
+    K.op(500, 186, 110, 24, '= DMAX → fn'); K.w([[470, 70], [470, 198], [500, 198]]); K.dot(470, 70);
+    K.t(20, 240, 'mₛ = (dₛ < mₛ₋₁) ? dₛ : mₛ₋₁  — 14단 비교 체인, 합성 시 트리로 바꿀 수 있음');
+    return '0 0 660 260';
+  }
+  function drawRc(K) {
+    K.port(10, 40, 'c1[sel]'); K.port(10, 80, 'c2[sel]'); K.port(10, 160, 'kr1'); K.port(10, 250, 'kr2');
+    K.circ(140, 60, '+'); K.w([[64, 40], [140, 40], [140, 50]]); K.w([[64, 80], [140, 80], [140, 70]]);
+    K.op(170, 48, 50, 24, '>>> 1'); K.w([[150, 60], [170, 60]]); K.t(228, 54, 'v̂'); K.dot(250, 60);
+    K.port(560, 30, 'v̂', true); K.w([[220, 60], [250, 60], [250, 30], [560, 30]]);
+    K.circ(300, 120, '×'); K.t(318, 104, 'KC1 1346'); K.w([[250, 60], [250, 120], [290, 120]], 'w');
+    K.circ(300, 210, '×'); K.t(318, 194, 'KC2 1682'); K.w([[250, 120], [250, 210], [290, 210]], 'w'); K.dot(250, 120);
+    K.op(330, 108, 56, 24, '>>> 16'); K.w([[310, 120], [330, 120]]); K.op(330, 198, 56, 24, '>>> 16'); K.w([[310, 210], [330, 210]]);
+    K.circ(430, 160, '−'); K.w([[46, 160], [420, 160]]); K.w([[386, 120], [430, 120], [430, 150]]); K.t(444, 152, 'r1');
+    K.circ(430, 250, '−'); K.w([[46, 250], [420, 250]]); K.w([[386, 210], [430, 210], [430, 240]]); K.t(444, 242, 'r2');
+    K.circ(500, 205, '+'); K.w([[440, 160], [500, 160], [500, 195]]); K.w([[440, 250], [500, 250], [500, 215]]); K.dot(470, 160); K.dot(470, 250);
+    K.op(520, 193, 50, 24, '>>> 1'); K.w([[510, 205], [520, 205]]);
+    K.mux(590, 180, 50, 'GATE_EN'); K.w([[570, 205], [590, 192]], 'w'); K.w([[470, 160], [470, 140], [580, 140], [580, 222], [590, 222]], 'w', false);
+    K.port(560, 290, 'r1, r2 → FLAG', true); K.w([[470, 250], [470, 290], [560, 290]], 'w');
+    return '0 0 660 310';
+  }
+  function drawFlag(K) {
+    K.port(10, 40, 'dmin'); K.port(10, 120, 'r1 − r2'); K.port(10, 210, 'R̂');
+    K.op(120, 28, 70, 24, '> 623'); K.w([[56, 40], [120, 40]]); K.t(200, 36, 'fv');
+    K.op(120, 66, 80, 24, '= DMAX'); K.w([[80, 40], [80, 78], [120, 78]]); K.dot(80, 40); K.t(208, 74, 'fn');
+    K.op(110, 108, 40, 24, '|x|'); K.op(170, 108, 60, 24, '> 256'); K.w([[64, 120], [110, 120]]); K.w([[150, 120], [170, 120]]);
+    const a = K.and(270, 110, 30); K.w([[230, 120], [270, 116]]); K.port(160, 160, 'GATE_EN'); K.w([[226, 160], [250, 160], [250, 134], [270, 134]]); K.t(a[0] + 4, a[1] - 6, 'fr');
+    K.op(110, 198, 60, 24, '< 0'); K.op(110, 236, 80, 24, '> 65280'); K.w([[40, 210], [110, 210]]); K.w([[80, 210], [80, 248], [110, 248]]); K.dot(80, 210);
+    const o1 = K.or(220, 206, 36); K.w([[170, 210], [224, 214]]); K.w([[190, 248], [224, 236]]); K.t(o1[0] + 4, o1[1] - 6, 'fo');
+    const o = K.or(420, 60, 120);
+    K.w([[190, 40], [380, 40], [380, 76], [428, 76]]); K.w([[200, 78], [370, 78], [370, 102], [434, 102]]);
+    K.w([[a[0], a[1]], [436, a[1] + 15]]); K.w([[o1[0], o1[1]], [400, o1[1]], [400, 160], [430, 160]]);
+    K.port(570, o[1], 'flag', true); K.w([[o[0], o[1]], [570, o[1]]]);
+    return '0 0 660 290';
+  }
+  function drawOreg(K) {
+    K.port(10, 40, 'v̂'); K.port(10, 90, 'R̂'); K.port(10, 140, 'flag, fbits'); K.port(10, 250, 'st = COMB');
+    K.reg(230, 22, 110, 36, 'out_v', 'EN'); K.reg(230, 72, 110, 36, 'out_R', 'EN'); K.reg(230, 122, 110, 36, 'out_flag, fbits', 'EN'); K.reg(230, 200, 110, 34, 'out_vld');
+    K.w([[40, 40], [230, 40]]); K.w([[40, 90], [230, 90]]); K.w([[100, 140], [230, 140]]);
+    K.w([[96, 250], [200, 250], [200, 217], [230, 217]]); K.w([[200, 250], [200, 176], [214, 176], [214, 52]], 'ctl', false); K.dot(200, 250);
+    ['out_v', 'out_R', 'out_flag, fbits', 'out_vld'].forEach((s, i) => { const y = [40, 90, 140, 217][i]; K.w([[340, y], [440, y]]); K.port(440, y, s + ' → tracker', true); });
+    return '0 0 660 280';
+  }
+  function drawCtrl(K) {
+    const S = [['IDLE', 70, 80], ['SCAN', 210, 80], ['DIVD', 350, 80], ['DIVR', 490, 80], ['FV', 490, 220], ['COMB', 300, 220]];
+    S.forEach(([s, x, y]) => K.fsm(x, y, s, false));
+    K.w([[92, 80], [188, 80]]); K.t(120, 72, 's_vld');
+    K.w([[232, 80], [328, 80]]); K.t(244, 72, 's_vld·s_last');
+    K.w([[372, 80], [468, 80]]); K.t(398, 72, 'cnt=9');
+    K.w([[490, 102], [490, 198]]); K.t(498, 154, 'cnt=9');
+    K.w([[468, 220], [322, 220]]); K.t(380, 212, 'lane');
+    K.w([[470, 232], [470, 270], [70, 270], [70, 102]]); K.t(200, 264, '¬lane (레인 1 끝, 레인 2 맵 대기)');
+    K.w([[278, 220], [110, 220], [86, 100]]); K.t(140, 212, '항상, out_vld');
+    K.t(20, 310, 'DIVD·DIVR: cnt 0 = 나눗셈기 load, 1–9 = 몫 비트 8…0');
+    return '0 0 640 330';
+  }
+
+  /* ---------------- selection ---------------- */
+  const detail = document.getElementById('detail');
+  let cur = null;
+  function select(id, scroll) {
+    const b = B[id]; if (!b) return; cur = id;
+    document.querySelectorAll('#top .blk').forEach(g => g.classList.toggle('on', g.getAttribute('data-id') === id));
+    const kindName = { state: '상태 블록', comb: '조합 논리', ext: '외부 IP' }[b.kind];
+    let h = `<div class="dhead"><div class="tags"><span class="tag ${b.kind}">${kindName}</span><span class="ref">${esc(b.ref)}</span></div>` +
+      `<div class="dtitle">${esc(b.name)} · ${esc(b.full)}</div><p class="lede">${esc(b.desc)}</p></div><div class="cols"><div class="col">`;
+    if (b.draw) h += `<h3>내부 회로</h3><div class="panel sheet sub"><svg id="subsvg" role="img" aria-label="${esc(b.name)} 내부 회로"></svg></div>`;
+    h += `<h3>논리식</h3><pre class="eq">${esc(b.eq)}</pre></div><div class="col"><h3>신호</h3><div class="tw"><table><thead><tr><th>신호</th><th>폭</th><th>방향</th><th>설명</th></tr></thead><tbody>` +
+      b.sig.map(s => `<tr><td class="m">${esc(s[0])}</td><td class="m">${esc(s[1])}</td><td class="m">${esc(s[2])}</td><td>${esc(s[3])}</td></tr>`).join('') + `</tbody></table></div>` +
+      `<div class="note"><b>설계 가정과 주의</b><span>${esc(b.note)}</span></div><h3>연결된 블록</h3><div class="rel">` +
+      b.rel.map(r => `<button type="button" data-r="${r}">${esc(B[r].name)}</button>`).join('') + `</div></div></div>`;
+    detail.innerHTML = h;
+    if (b.draw) {
+      const s = document.getElementById('subsvg');
+      const K = Kit(s);
+      const vb = b.draw(K);
+      s.setAttribute('viewBox', vb);
+    }
+    detail.querySelectorAll('.rel button').forEach(btn => btn.addEventListener('click', () => select(btn.dataset.r, true)));
+    try { history.replaceState(null, '', '#' + id); } catch (e) {}
+    if (scroll) detail.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  /* ---------------- application tables ---------------- */
+  const fmt = (x, d) => Number(x).toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+  document.querySelector('#files tbody').innerHTML = DATA.files.map(f => `<tr><td class="m">${f[0]}</td><td class="n">${f[1]}</td><td>${esc(f[2])}</td></tr>`).join('');
+
+  // waveform: lane-2 decision window, from the RTL VCD
+  (function () {
+    const W = DATA.wave, M = DATA.trace.filter(t => t.lane === 1 || t.st === 'COMB' || t.st === 'IDLE');
+    const svg = document.getElementById('wave'), K = Kit(svg);
+    const n = W.length, x0 = 110, cw = (1170 - x0) / n;
+    const rows = ['clk', 's_last', 'state', 'cnt', 'i', 'q', 'δd', 'v2', 'dmin', 'out_v', 'flag', 'out_vld'];
+    const rh = 37, y0 = 30;
+    K.t(10, 18, 'cycle', 't-lbl');
+    W.forEach((w, k) => { if (k % 2 === 0) K.t(x0 + k * cw + cw / 2, 18, String(w.cycle), 't-lbl', 'middle'); });
+    rows.forEach((r, j) => K.t(10, y0 + j * rh + rh / 2 + 4, r, 't-op'));
+    for (let k = 0; k <= n; k++) K.el('line', { x1: x0 + k * cw, y1: 24, x2: x0 + k * cw, y2: y0 + rows.length * rh, stroke: 'var(--grid)', 'stroke-width': .7 });
+    function bit(j, vals) {
+      const y = y0 + j * rh, hi = y + 8, lo = y + rh - 8;
+      let d = '';
+      vals.forEach((v, k) => { const x = x0 + k * cw, yy = v ? hi : lo; d += (k === 0 ? `M${x} ${yy}` : ` L${x} ${yy}`) + ` L${x + cw} ${yy}`; });
+      K.el('path', { d, fill: 'none', stroke: 'var(--wave)', 'stroke-width': 1.6 });
+    }
+    function bus(j, vals, col) {
+      const y = y0 + j * rh, top = y + 7, bot = y + rh - 7, mid = (top + bot) / 2;
+      let k = 0;
+      while (k < vals.length) {
+        let e = k; while (e + 1 < vals.length && vals[e + 1] === vals[k]) e++;
+        const xa = x0 + k * cw, xb = x0 + (e + 1) * cw;
+        if (vals[k] === '' || vals[k] == null) { K.el('line', { x1: xa, y1: mid, x2: xb, y2: mid, stroke: 'var(--muted)', 'stroke-width': 1.2 }); }
+        else {
+          K.el('polygon', { points: `${xa + 4},${top} ${xb - 4},${top} ${xb},${mid} ${xb - 4},${bot} ${xa + 4},${bot} ${xa},${mid}`, fill: col === 2 ? 'var(--state-tint)' : 'var(--comb-tint)', stroke: col === 2 ? 'var(--wave2)' : 'var(--wave)', 'stroke-width': 1.1 });
+          const s = String(vals[k]);
+          if ((xb - xa) > s.length * 6 + 3) K.t((xa + xb) / 2, mid + 4, s, 't-lbl', 'middle').setAttribute('style', 'fill:var(--ink)');
+        }
+        k = e + 1;
+      }
+    }
+    (function () { const y = y0, hi = y + 8, lo = y + rh - 8; let d = `M${x0} ${lo}`; for (let k = 0; k < n; k++) { const x = x0 + k * cw; d += ` L${x} ${hi} L${x + cw / 2} ${hi} L${x + cw / 2} ${lo} L${x + cw} ${lo}`; } K.el('path', { d, fill: 'none', stroke: 'var(--wave)', 'stroke-width': 1.4 }); })();
+    const div = w => w.state === 'DIVD' || w.state === 'DIVR';
+    bit(1, W.map(w => w.s_last));
+    bus(2, W.map(w => w.state), 2);
+    bus(3, W.map(w => div(w) ? w.cnt : ''), 2);
+    bus(4, W.map(w => div(w) ? w.i : ''));
+    bus(5, W.map(w => w.q));
+    bus(6, W.map(w => w.dd), 2);
+    bus(7, W.map(w => w.v2 == null ? '' : w.v2), 2);
+    bus(8, W.map(w => w.dmin == null ? '' : w.dmin));
+    bus(9, W.map(w => w.out_v == null ? '' : w.out_v), 2);
+    bit(10, W.map(w => w.flag ? 1 : 0));
+    bit(11, W.map(w => w.out_vld));
+    const pk = M[0].pk, out = DATA.scenOut[0];
+    const rowsT = [];
+    W.forEach((w, k) => {
+      const p = W[k - 1]; const parts = [];
+      if (w.state === 'SCAN') parts.push(`레인 2 마지막 샘플 (s_last = 1). 잡아 둔 피크 (n, m) = (${pk.n}, ${pk.m}), 이웃 L ${pk.dL} · R ${pk.dR}`);
+      if (w.state === 'DIVD' && w.cnt === 0) parts.push('Doppler 축 Grandke 나눗셈 시작 (분자 · 분모 load)');
+      if (w.state === 'DIVR' && w.cnt === 0) parts.push(`Doppler 축 몫 q = ${p.q} 확정, 거리 축 나눗셈 load`);
+      if (p && p.dd !== w.dd) parts.push(`δd 레지스터 = ${w.dd} (${(w.dd / 256).toFixed(3)} bin)`);
+      if (div(w) && w.cnt > 0 && p && w.q !== p.q) parts.push(`몫 비트 ${w.i + 1} = 1 → q = ${w.q}`);
+      if (w.state === 'FV') parts.push(`거리 몫 q = ${w.q} → δr = ${(w.q / 256).toFixed(3)} bin. kd × KV로 접힌 속도 계산 → LREG`);
+      if (w.state === 'COMB') parts.push(`v2 = ${w.v2} (${(w.v2 / 256).toFixed(2)} m/s). 후보 c1 = {${out.c1.map(x => (x / 256).toFixed(2)).join(', ')}}, c2 = {${out.c2.filter((x, i) => out.ok2[i]).map(x => (x / 256).toFixed(2)).join(', ')}} → dmin = ${w.dmin} (${(w.dmin / 256).toFixed(3)} m/s)`);
+      if (w.state === 'IDLE') parts.push(`out_vld = 1. v̂ = ${w.out_v}/256 = ${(w.out_v / 256).toFixed(3)} m/s, R̂ = ${(out.R / 512).toFixed(3)} m, flag = ${w.flag}`);
+      if (parts.length) rowsT.push(`<tr><td class="m">${w.cycle}</td><td class="m">${w.state}</td><td class="m">${div(w) ? w.i : ''}</td><td class="m">${w.q}</td><td>${parts.join('. ')}</td></tr>`);
+    });
+    document.querySelector('#wtab tbody').innerHTML = rowsT.join('');
+  })();
+
+  // scenario table
+  (function () {
+    const S = DATA.scen;
+    document.querySelector('#stab tbody').innerHTML = S.map(s => {
+      const o = s.out, L = s.lanes;
+      const fl = [o.fv && 'fv', o.fr && 'fr', o.fn && 'fn', o.fo && 'fo'].filter(Boolean).join(', ') || '—';
+      const ok = !o.flag && Math.abs(o.v / 256 - s.truth[1]) < 1 && Math.abs(o.R / 512 - s.truth[0]) < 1;
+      const verdict = o.flag ? '플래그로 차단' : (ok ? '정상 출력' : '경고 없는 오류');
+      return `<tr><td class="m">${s.id}</td><td>R ${s.truth[0].toFixed(1)} m, v ${s.truth[1] > 0 ? '+' : ''}${s.truth[1].toFixed(1)} m/s, ${s.truth[3].toFixed(0)} dB</td>` +
+        `<td class="m">(${L[0].n}, ${L[0].m}) · ${(L[0].vfold / 256).toFixed(2)}</td><td class="m">(${L[1].n}, ${L[1].m}) · ${(L[1].vfold / 256).toFixed(2)}</td>` +
+        `<td class="m">${(o.dmin / 256).toFixed(2)}</td><td class="m">${(o.v / 256).toFixed(2)}</td><td class="m">${(o.R / 512).toFixed(2)}</td><td class="m">${fl}</td><td>${verdict}</td></tr>`;
+    }).join('');
+  })();
+
+  // verification table
+  (function () {
+    const a = DATA.ver.base, b = DATA.ver.stress;
+    const R = [
+      ['프레임 수', fmt(a.frames), fmt(b.frames)],
+      ['시뮬레이션 사이클 (Icarus Verilog)', fmt(a.cycles), fmt(b.cycles)],
+      ['시뮬레이션 시간', a.secs + ' s', b.secs + ' s'],
+      ['RTL 로그 − 참조 모델 로그 (diff)', a.diff + '줄', b.diff + '줄'],
+      ['맵 SNR (채널당)', '8–25 dB 균등', '3–25 dB, 끝 bin·접힘 경계 포함'],
+      ['정상 출력 (참값과 1 m/s, 1 m 안)', fmt(a.ok_truth), fmt(b.ok_truth)],
+      ['플래그 (출력 보류)', fmt(a.flag), fmt(b.flag)],
+      ['  fv · 속도 불일치 > g/4', fmt(a.fv), fmt(b.fv)],
+      ['  fr · 두 레인 거리 불일치', fmt(a.fr), fmt(b.fr)],
+      ['  fn · 유효한 쌍 없음', fmt(a.fn), fmt(b.fn)],
+      ['  fo · 거리 범위 밖', fmt(a.fo), fmt(b.fo)],
+      ['경고 없는 오류', fmt(a.wrong_truth), fmt(b.wrong_truth)],
+      ['경계 결정 (임계값 2 LSB 안)', fmt(a.borderline), fmt(b.borderline)],
+      ['고정소수점 − 부동소수점, 속도 최대', a.max_dv_fixed_vs_float.toFixed(4) + ' m/s', b.max_dv_fixed_vs_float.toFixed(4) + ' m/s'],
+      ['고정소수점 − 부동소수점, 거리 최대', a.max_dR_fixed_vs_float.toFixed(4) + ' m', b.max_dR_fixed_vs_float.toFixed(4) + ' m'],
+      ['Grandke δ 차이 최대', a.max_dd_lsb + ' LSB', b.max_dd_lsb + ' LSB'],
+      ['검사기 불일치', String(Object.keys(a.errors).length ? JSON.stringify(a.errors) : 0), String(Object.keys(b.errors).length ? JSON.stringify(b.errors) : 0)]
+    ];
+    document.querySelector('#vtab tbody').innerHTML = R.map(r => `<tr><td${r[0].startsWith('  ') ? ' style="padding-left:14px"' : ''}>${r[0].trim()}</td><td class="m">${r[1]}</td><td class="m">${r[2]}</td></tr>`).join('');
+    const fw = DATA.ver.fault_no_wrap, fg = DATA.ver.fault_no_gate, fo = DATA.ver.fault_no_fo;
+    document.getElementById('vnote').innerHTML = `아래 고장 주입도 RTL 파라미터(NO_WRAP, GATE_EN)를 바꿔 Icarus로 돌린 결과입니다. fo 끄기만 참조 모델로 확인했습니다. 스트레스 설정은 거리 끝 bin(0–2, 253–255), 레인별 Doppler 접힘 경계, V<sub>c</sub> 밖 속도(71–110 m/s), 저SNR(3–10 dB), Doppler bin 0과 127 근처를 섞어서 기본 설정에서 드문 경로를 자주 지나가게 했습니다. 검사기가 실제로 오류를 잡는지 보려고 회로를 일부러 고장 냈습니다. ` +
+      `NBR의 Doppler wrap 대기(pend_dL)를 끄면 이웃값 오류 ${fw.errors.neighbours}건, Grandke ${fw.errors.grandke}건, 속도 ${fw.errors.velocity}건이 잡혔습니다. ` +
+      `거리 일치 검사(fr)를 끄면 플래그 불일치 ${fg.errors.flag_fr}건이 잡혔고, 경고 없는 오류가 0에서 ${fg.wrong_truth}건으로 늘었습니다. ` +
+      `범위 밖 검사(fo)를 끄면 경고 없는 오류가 ${fo.wrong_truth}건 생깁니다.`;
+  })();
+
+  // resources (Yosys synth_ice40, no place and route)
+  (function () {
+    const Y = DATA.synth, T = Y.total;
+    const pct = (x, c) => Math.round(100 * x / c) + '%';
+    document.querySelector('#rtab tbody').innerHTML = [
+      ['프레임당 사이클', '65,579', '레인당 32,768 스캔 + 10 + 10 + 1, COMB 1. RTL 시뮬레이션에서 1,000프레임 65,582,003사이클(테스트벤치 대기 포함)'],
+      ['100 MHz라면 처리 시간', '0.656 ms', '50 ms 프레임의 1.3%. 100 MHz는 가정 (타이밍 미검증)'],
+      ['LUT4', fmt(T.lut4), 'iCE40 HX8K ' + fmt(T.lut_cap) + '개의 ' + pct(T.lut4, T.lut_cap)],
+      ['캐리 셀', fmt(T.carry), '덧셈 · 뺄셈 · 비교 체인'],
+      ['플립플롭', fmt(T.ff), 'RTL 레지스터와 디버그 출력 포함'],
+      ['블록 RAM', String(T.bram), 'SB_RAM40_4K 1개 = NBR 라인 버퍼 128 × 16 bit'],
+      ['모듈별 LUT4 (계층 유지 합성)', Y.modules.map(m => m[0].split(' ')[0] + ' ' + fmt(m[1])).join(' · '), 'COMB가 ' + pct(Y.modules[0][1], Y.modules.reduce((a, m) => a + m[1], 0)) + '. COMB에는 플립플롭이 없음'],
+      ['가장 긴 조합 경로', Y.depth.dc_top + '단', 'v2 → CAND → MATCH → RC → FLAG → out_flag. 4-LUT 일반 매핑, 캐리 체인도 단으로 셈. PKD ' + Y.depth.dc_pkd + '단, GRK ' + Y.depth.dc_div + '단'],
+      ['최대 주파수', '미측정', '배치 · 배선(nextpnr) 전']
+    ].map(r => `<tr><td>${r[0]}</td><td class="m">${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+  })();
+
+  // fixes and design choices
+  document.getElementById('fix').innerHTML = [
+    `<b>범위 밖 플래그 fo를 넣었습니다.</b> 스트레스 시험에서 127.3 m 근처의 빠른 표적 4건이 경고 없이 −0.6 m로 나갔습니다. Doppler 결합이 비트 주파수를 bin 255 너머로 밀어 bin 0 쪽으로 접혔고, 두 레인이 똑같이 접혀 거리 일치 검사도 통과했습니다. 보정 거리가 0보다 작거나 bin 255보다 크면 플래그하도록 고친 뒤 경고 없는 오류가 0건이 되었습니다. 대신 참값 127.35 m, 출력 127.50 m로 맞게 나온 표적 1건도 bin 255 경계에 걸려 함께 플래그됩니다.`,
+    `<b>비교 분석의 개선안(거리 일치 검사 fr)을 회로에 넣었습니다.</b> 원 설계처럼 레인 1 거리만 쓰는 대신 두 레인을 모두 보정하고, 둘이 1 bin 넘게 다르면 플래그합니다. GATE_EN = 0으로 원 설계를 그대로 만들 수 있습니다.`,
+    `<b>검사기를 고쳤습니다.</b> 첫 RTL 실행에서 시간 측정 명령이 없어 로그가 비었는데, 검사기는 0프레임을 '오류 없음'으로 통과시켰습니다. 출력 프레임 수가 참값 수와 다르면 오류로 세도록 고친 뒤 다시 돌렸습니다.`
+  ].map(s => `<li>${s}</li>`).join('');
+  document.getElementById('choose').innerHTML = [
+    `<b>맵을 저장하지 않고 이웃을 스트림에서 잡습니다.</b> 이웃을 맵 메모리에서 다시 읽으면 레인당 64 KB가 필요해, 소형 FPGA의 블록 RAM 전체(예: iCE40 HX8K 16 KB)를 넘습니다. 라인 버퍼 하나(2 kbit)와 대기 플래그 셋이면 충분하고, 대신 m = 0의 왼쪽 이웃이 같은 행 끝에 있는 Doppler wrap 경우를 따로 처리해야 합니다.`,
+    `<b>Grandke 나눗셈 네 번을 직렬 나눗셈기 하나로 합니다.</b> 맵을 읽는 데 32,768사이클이 걸리므로 9사이클짜리 나눗셈을 차례로 해도 전체 시간은 0.06% 늘 뿐입니다.`
+  ].map(s => `<li>${s}</li>`).join('');
+
+  // bit widths
+  document.querySelector('#btab tbody').innerHTML = [
+    ['s_mag', 16, 'FFT IP 출력, 블록 부동소수점 (설계 가정)'],
+    ['s_n, s_m', '8, 7', 'N_s = 256 거리 bin, N_c = 128 Doppler bin'],
+    ['δ', 10, 'Q.8 bin, −256 … +128 (Grandke 범위 −1 … +0.5 bin)'],
+    ['kd', 17, 'Q7.8 bin, −64.5 … 64'],
+    ['v_fold, v̂', 18, '1/256 m/s. 레인 내 ±24.35 m/s, 후보 ±102 m/s'],
+    ['cᵢₖ', 19, '후보, ±(24.35 + 2·38.96) m/s 까지'],
+    ['dᵢⱼ, dmin', 17, '쌍 차이 최대 약 205 m/s, DMAX = 2¹⁷ − 1'],
+    ['kr, R̂', 18, 'Q8 bin, 0 … 255.99 (× 0.5 m = 0 … 128 m)'],
+    ['rem', 26, '|num|·2⁸ ≤ 2²⁴, 제수 2⁸배와 비교'],
+    ['KV1, KV2', 15, 'Δvᵢ · 2¹⁵ = 12468, 9974'],
+    ['KC1, KC2', 13, '2·Tcᵢ/λ · 2¹⁶ = 1346, 1682'],
+    ['THV, THR', '17, 18', 'g/4 = 623, 1 bin = 256']
+  ].map(r => `<tr><td class="m">${r[0]}</td><td class="m">${r[1]}</td><td>${esc(r[2])}</td></tr>`).join('');
+
+  topSheet();
+  const start = (location.hash || '').replace('#', '');
+  select(B[start] ? start : 'match', false);
+})();
+</script>
+</body>
+</html>
